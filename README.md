@@ -15,6 +15,16 @@ A PIN-protected mobile-friendly web app for sharing Home Assistant device data (
 - **Hosting:** Docker Compose (self-hosted behind reverse proxy)
 - **CI/CD:** GitHub Actions
 
+## Features
+
+- **PIN Authentication** — Simple username + PIN login, no HA accounts needed
+- **Device Dashboard** — Mobile-optimized view of shared devices
+- **Real-time Updates** — Live device status via 5-second polling
+- **Switch Control** — Toggle on/off switches directly from the dashboard
+- **Battery Monitoring** — Visual battery indicators with low-battery warnings
+- **Offline Detection** — Clearly shows when devices are unavailable
+- **Account Security** — Auto-lockout after 5 failed login attempts
+
 ## Getting Started
 
 ### Prerequisites
@@ -40,11 +50,25 @@ cp .env.example .env
 # Run database migrations
 pnpm db:migrate
 
+# Create your first user
+pnpm db:seed neighbor1 1234
+
 # Start development server
 pnpm dev
 ```
 
 The development server will start the Vite dev server on port 5173 (frontend) and the Fastify API on port 3000 (backend).
+
+### Home Assistant Configuration
+
+1. In Home Assistant, go to your **User Profile** (bottom-left)
+2. Scroll to **Long-Lived Access Tokens** and click **Create Token**
+3. Name it "Apartment Dashboard" and copy the token immediately
+4. Add to your `.env` file:
+   ```
+   HA_URL=http://your-ha-instance:8123
+   HA_TOKEN=your_long_lived_token_here
+   ```
 
 ### Running Tests
 
@@ -79,10 +103,6 @@ apartment-dashboard/
 └── package.json
 ```
 
-## Features
-
-*No features implemented yet. See [PLAN.md](PLAN.md) for the roadmap.*
-
 ## Deployment
 
 ### Using Docker Compose
@@ -95,9 +115,22 @@ docker compose pull
 docker compose up -d
 ```
 
+### Create Users (Docker)
+
+```bash
+# Create a user inside the container
+docker compose exec app npm run db:seed neighbor1 1234
+```
+
 ### Environment Variables
 
-See `.env.example` for required environment variables.
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `HA_URL` | Home Assistant URL | `http://homeassistant.local:8123` |
+| `HA_TOKEN` | Long-lived access token | *(required)* |
+| `PORT` | Server port | `3000` |
+| `JWT_SECRET` | Secret for JWT tokens | *(required)* |
+| `DATABASE_URL` | SQLite database path | `./data/app.db` |
 
 ## License
 

@@ -7,19 +7,19 @@
 ## Milestone 1: Basic Dashboard
 
 **Goal:** Connect to Home Assistant, display sensor data and switch controls with PIN protection
-**Status:** In Progress
+**Status:** Complete
 
 ### Features
 - [x] Home Assistant API integration (read sensor data, control switches)
 - [x] PIN + username authentication (no user accounts)
-- [ ] Mobile-optimized dashboard
-- [ ] Real-time device status display
-- [ ] Switch toggles for shared devices
-- [ ] Soil sensor data visualization
-- [ ] Battery indicator for battery-powered devices
-- [ ] Offline device detection
-- [ ] Account lockout after failed PIN attempts
-- [ ] Health endpoint for HA connectivity
+- [x] Mobile-optimized dashboard
+- [x] Real-time device status display
+- [x] Switch toggles for shared devices
+- [x] Soil sensor data visualization
+- [x] Battery indicator for battery-powered devices
+- [x] Offline device detection
+- [x] Account lockout after failed PIN attempts
+- [x] Health endpoint for HA connectivity
 
 ### Non-Functional Requirements
 - Sub-second page load time
@@ -54,3 +54,4 @@
 
 - [x] Home Assistant API integration (Sun May 31 2026) — PR #11
 - [x] PIN + username authentication (Sun May 31 2026) — PR #12
+- [x] Mobile dashboard with real-time data (Sun May 31 2026) — PR #13
