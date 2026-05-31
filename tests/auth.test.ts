@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import fastify from 'fastify';
 import { authRoutes } from '../src/server/routes/auth.js';
 import { healthRoutes } from '../src/server/routes/health.js';
