@@ -7,10 +7,7 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy dependency files
-COPY package.json pnpm-lock.yaml ./
-
-# Approve builds for native dependencies
-RUN pnpm approve-builds better-sqlite3
+COPY package.json pnpm-lock.yaml .npmrc ./
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
@@ -30,10 +27,7 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy dependency files
-COPY package.json pnpm-lock.yaml ./
-
-# Approve builds for native dependencies
-RUN pnpm approve-builds better-sqlite3
+COPY package.json pnpm-lock.yaml .npmrc ./
 
 # Install production dependencies only
 RUN pnpm install --prod --frozen-lockfile
