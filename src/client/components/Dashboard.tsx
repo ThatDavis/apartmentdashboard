@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -9,60 +9,66 @@ interface Device {
   name: string;
   type: string;
   state: string;
-  battery?: number;
+  attributes: Record<string, unknown>;
+  lastUpdated: string | null;
   isOnline: boolean;
+  battery: number | null;
 }
 
 export default function Dashboard({ onLogout }: DashboardProps) {
   const [devices, setDevices] = useState<Device[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error] = useState('');
+  const [error, setError] = useState('');
+
+  const fetchDevices = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/devices', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          onLogout();
+          return;
+        }
+        throw new Error('Failed to fetch devices');
+      }
+
+      const data = await response.json();
+      setDevices(data);
+      setError('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load devices');
+    }
+  }, [onLogout]);
 
   useEffect(() => {
-    // TODO: Fetch actual devices from API
-    // For now, show placeholder data
-    const mockDevices: Device[] = [
-      {
-        id: 1,
-        name: 'Soil Sensor - Living Room',
-        type: 'sensor',
-        state: '45%',
-        battery: 78,
-        isOnline: true,
-      },
-      {
-        id: 2,
-        name: 'Plant Light',
-        type: 'switch',
-        state: 'on',
-        isOnline: true,
-      },
-      {
-        id: 3,
-        name: 'Window Sensor',
-        type: 'binary_sensor',
-        state: 'closed',
-        battery: 34,
-        isOnline: true,
-      },
-      {
-        id: 4,
-        name: 'Outdoor Sensor',
-        type: 'sensor',
-        state: 'offline',
-        isOnline: false,
-      },
-    ];
+    fetchDevices();
+    setIsLoading(false);
 
-    setTimeout(() => {
-      setDevices(mockDevices);
-      setIsLoading(false);
-    }, 500);
-  }, []);
+    // Poll for updates every 5 seconds
+    const interval = setInterval(fetchDevices, 5000);
+    return () => clearInterval(interval);
+  }, [fetchDevices]);
 
   const handleToggle = async (deviceId: number) => {
-    // TODO: Send toggle command to API
-    console.log('Toggle device:', deviceId);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/devices/${deviceId}/toggle`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle device');
+      }
+
+      // Refresh device list
+      await fetchDevices();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to toggle device');
+    }
   };
 
   return (
@@ -86,15 +92,27 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         </div>
       </header>
 
+      {/* Error Banner */}
+      {error && (
+        <div className="max-w-lg mx-auto px-4 pt-4">
+          <div className="bg-danger/10 border border-danger/20 rounded-xl p-3 text-danger text-sm flex items-center justify-between">
+            <span>{error}</span>
+            <button onClick={() => setError('')} className="text-danger/60 hover:text-danger">
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Device List */}
       <main className="max-w-lg mx-auto px-4 py-4 space-y-3">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
-        ) : error ? (
-          <div className="bg-danger/10 border border-danger/20 rounded-xl p-4 text-danger text-sm">
-            {error}
+        ) : devices.length === 0 ? (
+          <div className="text-center py-12 text-text-muted">
+            <p>No shared devices found</p>
           </div>
         ) : (
           devices.map((device) => (
@@ -114,22 +132,29 @@ function DeviceCard({ device, onToggle }: { device: Device; onToggle: () => void
     return 'bg-accent';
   };
 
+  const getBatteryColor = () => {
+    if (!device.battery) return '';
+    if (device.battery <= 20) return 'text-danger';
+    if (device.battery <= 40) return 'text-warning';
+    return 'text-success';
+  };
+
   return (
     <div className={`bg-card rounded-xl p-4 shadow-sm border ${device.isOnline ? 'border-silver' : 'border-offline'} ${!device.isOnline ? 'opacity-60' : ''}`}>
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className={`w-3 h-3 rounded-full ${getStatusColor()}`} />
-          <div>
-            <h3 className="font-semibold text-text text-sm">{device.name}</h3>
+        <div className="flex items-center space-x-3 min-w-0">
+          <div className={`w-3 h-3 rounded-full flex-shrink-0 ${getStatusColor()}`} />
+          <div className="min-w-0">
+            <h3 className="font-semibold text-text text-sm truncate">{device.name}</h3>
             <p className="text-xs text-text-muted">
               {device.isOnline ? device.state : 'Offline'}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
-          {device.battery !== undefined && device.isOnline && (
-            <div className="flex items-center text-xs text-text-muted">
+        <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
+          {device.battery !== null && device.isOnline && (
+            <div className={`flex items-center text-xs ${getBatteryColor()}`}>
               <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
@@ -143,6 +168,7 @@ function DeviceCard({ device, onToggle }: { device: Device; onToggle: () => void
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                 device.state === 'on' ? 'bg-primary' : 'bg-silver'
               }`}
+              aria-label={`Toggle ${device.name}`}
             >
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
