@@ -31,7 +31,7 @@ await app.register(cors, {
 // Serve static files in production
 if (NODE_ENV === 'production') {
   await app.register(staticPlugin, {
-    root: join(__dirname, '../../client'),
+    root: join(__dirname, '../client'),
     prefix: '/',
   });
 }

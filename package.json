@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc -p tsconfig.server.json && vite build",
     "server": "tsx src/server/index.ts",
     "server:prod": "node dist/server/index.js",
     "test": "vitest",

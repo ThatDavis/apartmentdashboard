@@ -21,7 +21,7 @@ RUN cd node_modules/better-sqlite3 && pnpm rebuild
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application (server + client)
 RUN pnpm build
 
 # Production stage
@@ -47,6 +47,16 @@ RUN cd node_modules/better-sqlite3 && pnpm rebuild
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
+# Copy drizzle migrations
+COPY --from=builder /app/drizzle ./drizzle
+
+# Copy startup script
+COPY --from=builder /app/scripts/start.sh ./start.sh
+RUN chmod +x ./start.sh
+
+# Copy production seed script
+COPY --from=builder /app/scripts/seed-user-prod.mjs ./scripts/seed-user-prod.mjs
+
 # Create data directory for SQLite
 RUN mkdir -p /app/data
 
@@ -57,5 +67,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
-# Start the server
-CMD ["node", "dist/server/index.js"]
+# Start the server (runs migrations first)
+CMD ["./start.sh"]
