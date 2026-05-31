@@ -40,7 +40,6 @@ RUN cd node_modules/better-sqlite3 && pnpm rebuild
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/drizzle ./drizzle
 
 # Create data directory for SQLite
 RUN mkdir -p /app/data
