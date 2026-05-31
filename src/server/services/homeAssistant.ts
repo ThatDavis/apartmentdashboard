@@ -64,7 +64,7 @@ class HomeAssistantService {
 
   async getDeviceState(entityId: string): Promise<HADeviceState | null> {
     try {
-      const states = await this.request('/states');
+      const states = await this.request('/states') as HADeviceState[];
       return states.find((s: HADeviceState) => s.entity_id === entityId) || null;
     } catch (error) {
       console.error('Failed to fetch device state:', error);
@@ -74,7 +74,7 @@ class HomeAssistantService {
 
   async getAllStates(): Promise<HADeviceState[]> {
     try {
-      return await this.request('/states');
+      return await this.request('/states') as HADeviceState[];
     } catch (error) {
       console.error('Failed to fetch all states:', error);
       return [];
