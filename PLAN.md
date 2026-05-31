@@ -11,7 +11,7 @@
 
 ### Features
 - [x] Home Assistant API integration (read sensor data, control switches)
-- [ ] PIN + username authentication (no user accounts)
+- [x] PIN + username authentication (no user accounts)
 - [ ] Mobile-optimized dashboard
 - [ ] Real-time device status display
 - [ ] Switch toggles for shared devices
@@ -53,3 +53,4 @@
 ## Completed Features
 
 - [x] Home Assistant API integration (Sun May 31 2026) — PR #11
+- [x] PIN + username authentication (Sun May 31 2026) — PR #12
