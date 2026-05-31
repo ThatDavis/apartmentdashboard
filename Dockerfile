@@ -9,6 +9,9 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # Copy dependency files
 COPY package.json pnpm-lock.yaml ./
 
+# Approve builds for native dependencies
+RUN pnpm config set ignore-build-scripts false
+
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
@@ -28,6 +31,9 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy dependency files
 COPY package.json pnpm-lock.yaml ./
+
+# Approve builds for native dependencies
+RUN pnpm config set ignore-build-scripts false
 
 # Install production dependencies only
 RUN pnpm install --prod --frozen-lockfile
