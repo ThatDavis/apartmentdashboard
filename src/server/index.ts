@@ -7,6 +7,7 @@ import { dirname, join } from 'path';
 import { authRoutes } from './routes/auth.js';
 import { healthRoutes } from './routes/health.js';
 import { deviceRoutes } from './routes/devices.js';
+import { homeAssistantPlugin } from './services/homeAssistant.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -33,6 +34,9 @@ if (NODE_ENV === 'production') {
     prefix: '/',
   });
 }
+
+// Register Home Assistant service
+await app.register(homeAssistantPlugin);
 
 // Register routes
 await app.register(authRoutes, { prefix: '/api' });
