@@ -31,6 +31,7 @@ Goal: Connect to Home Assistant, display sensor data and switch controls with PI
 
 - Sun May 31 2026: Initial stack — TypeScript + Fastify + React + SQLite. Rationale: Fastify is fast and modern for APIs, React handles real-time UI well, SQLite requires zero setup for small deployments.
 - Sun May 31 2026: Deep-plan validated Milestone 1. Key decisions: HA connectivity via health endpoint, rate limiting for PIN brute force, mobile-first responsive design.
+- Sun May 31 2026: Deep-plan validated admin device security. Key decisions: Whitelist-only device model (no isShared flag), hardcoded domain whitelist with env override, admin role for device management, remove sync-ha-devices script as security risk.
 
 ## [PROGRESS]
 
@@ -56,6 +57,16 @@ Goal: Connect to Home Assistant, display sensor data and switch controls with PI
 |  |    ✓ Add switch toggle UI with API integration |
 |  |    ✓ Add battery indicator with color coding |
 |  |    ✓ Add offline device detection |
+| Sun May 31 2026 | Completed feature: Admin device security with domain whitelist. All tests passing (33/33). |
+|  |    ✓ Add isAdmin flag to users table |
+|  |    ✓ Remove isShared flag from devices (whitelist-only) |
+|  |    ✓ Enforce domain whitelist: switch, light, sensor, binary_sensor |
+|  |    ✓ Block dangerous domains: lock, cover, alarm, etc. |
+|  |    ✓ Add admin API endpoints for device CRUD |
+|  |    ✓ Add admin UI page for managing devices |
+|  |    ✓ Remove sync-ha-devices.mjs security risk |
+|  |    ✓ Update seed script with --admin flag |
+|  |    ✓ Write 11 admin route tests |
 
 ## [DISCOVERIES]
 
@@ -84,6 +95,14 @@ Goal: Connect to Home Assistant, display sensor data and switch controls with PI
 - Added battery indicator with color-coded levels
 - Implemented offline device detection
 - All tests passing (22/22)
+
+### Admin Device Security (Sun May 31 2026)
+- Implemented whitelist-only device model (devices in DB are always shared)
+- Added admin role (isAdmin flag) with separate admin dashboard
+- Enforced domain whitelist on all device operations
+- Removed sync-ha-devices.mjs (security risk: exposed all HA entities)
+- Updated seed script to support --admin flag
+- All tests passing (33/33)
 
 ### Milestone 1 Complete
 All 10 features implemented and merged. Project is functional end-to-end.

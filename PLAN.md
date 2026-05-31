@@ -35,6 +35,8 @@
 - [ ] Historical data storage and aggregation
 
 ### Milestone 3: Sharing & Access
+- [x] Admin role for device management
+- [x] Domain whitelist for device security
 - [ ] Multiple PINs per user
 - [ ] Access logs
 - [ ] Device grouping by room/area
@@ -55,3 +57,4 @@
 - [x] Home Assistant API integration (Sun May 31 2026) — PR #11
 - [x] PIN + username authentication (Sun May 31 2026) — PR #12
 - [x] Mobile dashboard with real-time data (Sun May 31 2026) — PR #13
+- [x] Admin role with device management and domain whitelist (Sun May 31 2026)
