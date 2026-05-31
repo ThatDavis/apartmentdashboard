@@ -31,9 +31,12 @@ export async function authMiddleware(
 
 export async function registerAuthMiddleware(fastify: FastifyInstance) {
   fastify.addHook('onRequest', async (request: AuthenticatedRequest, reply: FastifyReply) => {
-    // Skip auth for public routes
+    // Skip auth for public routes - use raw URL to avoid type issues
+    const url = request.raw.url || '';
+    const path = url.split('?')[0];
+    
     const publicRoutes = ['/api/login', '/api/logout', '/api/health'];
-    if (publicRoutes.includes(request.routerPath)) {
+    if (publicRoutes.includes(path)) {
       return;
     }
 
