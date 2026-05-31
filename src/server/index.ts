@@ -7,6 +7,7 @@ import { dirname, join } from 'path';
 import { authRoutes } from './routes/auth.js';
 import { healthRoutes } from './routes/health.js';
 import { deviceRoutes } from './routes/devices.js';
+import { homeAssistantPlugin } from './services/homeAssistant.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -34,6 +35,9 @@ if (NODE_ENV === 'production') {
   });
 }
 
+// Register Home Assistant service
+await app.register(homeAssistantPlugin);
+
 // Register routes
 await app.register(authRoutes, { prefix: '/api' });
 await app.register(healthRoutes, { prefix: '/api' });
@@ -48,7 +52,7 @@ app.get('/', async (_request, reply) => {
 });
 
 // Error handler
-app.setErrorHandler((error: any, _request, reply) => {
+app.setErrorHandler((error: Error & { statusCode?: number }, _request, reply) => {
   app.log.error(error);
   reply.status(error.statusCode || 500).send({
     error: NODE_ENV === 'production' ? 'Internal Server Error' : error.message,

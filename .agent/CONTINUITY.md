@@ -8,7 +8,7 @@
 
 ### Milestone 1: Basic Dashboard (In Progress)
 Goal: Connect to Home Assistant, display sensor data and switch controls with PIN protection
-- [ ] Home Assistant API integration
+- [x] Home Assistant API integration (Issue #1, branch feature/1-home-assistant-integration) — Completed
 - [ ] PIN + username authentication
 - [ ] Mobile-optimized dashboard
 - [ ] Real-time device status display
@@ -37,6 +37,14 @@ Goal: Connect to Home Assistant, display sensor data and switch controls with PI
 | Date | What was done |
 |------|---------------|
 | Sun May 31 2026 | Initial scaffold. Stack: TypeScript + Fastify + React + SQLite + Tailwind. Docker + GitHub Actions CI/CD configured. |
+| Sun May 31 2026 | Started feature: Home Assistant API integration (Issue #1) on branch feature/1-home-assistant-integration. |
+| Sun May 31 2026 | Completed feature: Home Assistant API integration. All acceptance criteria met. |
+|  |    ✓ Create HA API client/service module |
+|  |    ✓ Implement device state fetching from HA |
+|  |    ✓ Implement switch toggle command to HA |
+|  |    ✓ Update health endpoint with HA connectivity check |
+|  |    ✓ Add error handling and retry logic |
+|  |    ✓ Write tests for HA integration |
 
 ## [DISCOVERIES]
 
@@ -44,4 +52,8 @@ Goal: Connect to Home Assistant, display sensor data and switch controls with PI
 
 ## [OUTCOMES]
 
-*None yet.*
+### Home Assistant API Integration (Sun May 31 2026)
+- Created HomeAssistantService with REST API client for HA communication
+- Implemented device state fetching, toggle commands, and health checks
+- Added comprehensive error handling with graceful fallbacks
+- All tests passing (13/13)

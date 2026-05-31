@@ -10,7 +10,7 @@
 **Status:** In Progress
 
 ### Features
-- [ ] Home Assistant API integration (read sensor data, control switches)
+- [x] Home Assistant API integration (read sensor data, control switches)
 - [ ] PIN + username authentication (no user accounts)
 - [ ] Mobile-optimized dashboard
 - [ ] Real-time device status display
@@ -52,4 +52,4 @@
 
 ## Completed Features
 
-*None yet.*
+- [x] Home Assistant API integration (Sun May 31 2026) — PR #11
