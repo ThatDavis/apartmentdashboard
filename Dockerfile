@@ -9,8 +9,11 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # Copy dependency files
 COPY package.json pnpm-lock.yaml .npmrc ./
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies (ignore scripts initially to avoid approval prompt)
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+# Manually run build for better-sqlite3
+RUN cd node_modules/better-sqlite3 && pnpm rebuild
 
 # Copy source code
 COPY . .
@@ -29,8 +32,11 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 # Copy dependency files
 COPY package.json pnpm-lock.yaml .npmrc ./
 
-# Install production dependencies only
-RUN pnpm install --prod --frozen-lockfile
+# Install production dependencies only (ignore scripts)
+RUN pnpm install --prod --frozen-lockfile --ignore-scripts
+
+# Manually run build for better-sqlite3
+RUN cd node_modules/better-sqlite3 && pnpm rebuild
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
