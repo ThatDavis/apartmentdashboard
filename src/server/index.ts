@@ -52,7 +52,7 @@ app.get('/', async (_request, reply) => {
 });
 
 // Error handler
-app.setErrorHandler((error: any, _request, reply) => {
+app.setErrorHandler((error: Error & { statusCode?: number }, _request, reply) => {
   app.log.error(error);
   reply.status(error.statusCode || 500).send({
     error: NODE_ENV === 'production' ? 'Internal Server Error' : error.message,

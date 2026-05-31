@@ -10,7 +10,7 @@ if (!HA_URL || !HA_TOKEN) {
 interface HADeviceState {
   entity_id: string;
   state: string;
-  attributes: Record<string, any>;
+  attributes: Record<string, unknown>;
   last_changed: string;
   last_updated: string;
 }
@@ -26,7 +26,7 @@ class HomeAssistantService {
     this.enabled = !!(this.baseUrl && this.token);
   }
 
-  private async request(endpoint: string, options: RequestInit = {}): Promise<any> {
+  private async request(endpoint: string, options: RequestInit = {}): Promise<unknown> {
     if (!this.enabled) {
       throw new Error('Home Assistant not configured');
     }
