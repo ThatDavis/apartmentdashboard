@@ -57,7 +57,6 @@ RUN chmod +x ./start.sh
 # Copy production scripts
 COPY --from=builder /app/scripts/seed-user-prod.mjs ./scripts/seed-user-prod.mjs
 COPY --from=builder /app/scripts/add-device.mjs ./scripts/add-device.mjs
-COPY --from=builder /app/scripts/sync-ha-devices.mjs ./scripts/sync-ha-devices.mjs
 
 # Create data directory for SQLite
 RUN mkdir -p /app/data

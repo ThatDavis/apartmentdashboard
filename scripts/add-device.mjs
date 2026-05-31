@@ -15,8 +15,19 @@ async function addDevice() {
   const [haEntityId, name, type, batteryEntityId] = args;
 
   // Validate type
-  if (!['switch', 'sensor'].includes(type)) {
-    console.error('Type must be "switch" or "sensor"');
+  if (!['switch', 'sensor', 'binary_sensor'].includes(type)) {
+    console.error('Type must be "switch", "sensor", or "binary_sensor"');
+    process.exit(1);
+  }
+
+  // Validate domain
+  const domain = haEntityId.split('.')[0];
+  const allowedDomains = (process.env.ALLOWED_DOMAINS || 'switch,light,sensor,binary_sensor')
+    .split(',')
+    .map(d => d.trim());
+  
+  if (!allowedDomains.includes(domain)) {
+    console.error(`Domain "${domain}" is not allowed. Allowed: ${allowedDomains.join(', ')}`);
     process.exit(1);
   }
 
@@ -29,8 +40,7 @@ async function addDevice() {
       .set({ 
         name, 
         type, 
-        batteryEntityId: batteryEntityId || null,
-        isShared: true 
+        batteryEntityId: batteryEntityId || null
       })
       .where(eq(devices.haEntityId, haEntityId));
     console.log(`✓ Updated device: ${name}`);
@@ -39,8 +49,7 @@ async function addDevice() {
       haEntityId,
       name,
       type,
-      batteryEntityId: batteryEntityId || null,
-      isShared: true,
+      batteryEntityId: batteryEntityId || null
     });
     console.log(`✓ Added device: ${name}`);
   }

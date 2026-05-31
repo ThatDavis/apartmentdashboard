@@ -7,8 +7,9 @@ import { dirname, join } from 'path';
 import { authRoutes } from './routes/auth.js';
 import { healthRoutes } from './routes/health.js';
 import { deviceRoutes } from './routes/devices.js';
+import { adminRoutes } from './routes/admin.js';
 import { homeAssistantPlugin } from './services/homeAssistant.js';
-import { registerAuthMiddleware } from './middleware/auth.js';
+import { authMiddleware, AuthenticatedRequest } from './middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -39,13 +40,26 @@ if (NODE_ENV === 'production') {
 // Register Home Assistant service
 await app.register(homeAssistantPlugin);
 
-// Register auth middleware (protects routes except public ones)
-await app.register(registerAuthMiddleware);
+// Register auth middleware globally (protects routes except public ones)
+app.addHook('preHandler', async (request: AuthenticatedRequest, reply) => {
+  const url = request.raw.url || '';
+  const path = url.split('?')[0];
+  
+  // Skip auth for public API routes and static files
+  const publicRoutes = ['/api/login', '/api/logout', '/api/health'];
+  const isStaticFile = path === '/' || path.startsWith('/assets/') || path.endsWith('.html') || path.endsWith('.js') || path.endsWith('.css');
+  if (publicRoutes.includes(path) || isStaticFile) {
+    return;
+  }
+
+  await authMiddleware(request, reply);
+});
 
 // Register routes
 await app.register(authRoutes, { prefix: '/api' });
 await app.register(healthRoutes, { prefix: '/api' });
 await app.register(deviceRoutes, { prefix: '/api' });
+await app.register(adminRoutes, { prefix: '/api' });
 
 // SPA fallback for client-side routing
 app.get('/', async (_request, reply) => {

@@ -4,6 +4,7 @@ export const users = sqliteTable('users', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   username: text('username').notNull().unique(),
   pinHash: text('pin_hash').notNull(),
+  isAdmin: integer('is_admin', { mode: 'boolean' }).default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
@@ -24,6 +25,5 @@ export const devices = sqliteTable('devices', {
   room: text('room'),
   batteryEntityId: text('battery_entity_id'),
   displayOrder: integer('display_order').default(0),
-  isShared: integer('is_shared', { mode: 'boolean' }).default(true),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
