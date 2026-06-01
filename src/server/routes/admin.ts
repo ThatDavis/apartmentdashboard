@@ -77,6 +77,68 @@ export async function adminRoutes(fastify: FastifyInstance) {
     return result[0];
   });
 
+  // Update an existing device
+  fastify.patch<{ Body: Partial<AddDeviceBody> }>('/admin/devices/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const deviceId = parseInt(id, 10);
+
+    if (isNaN(deviceId)) {
+      return reply.status(400).send({ error: 'Invalid device ID' });
+    }
+
+    const device = await db
+      .select()
+      .from(devices)
+      .where(eq(devices.id, deviceId))
+      .get();
+
+    if (!device) {
+      return reply.status(404).send({ error: 'Device not found' });
+    }
+
+    const { haEntityId, name, type, batteryEntityId } = request.body;
+
+    // Validate domain if entity ID is being changed
+    if (haEntityId !== undefined && !isDomainAllowed(haEntityId)) {
+      return reply.status(400).send({
+        error: 'Domain not allowed',
+        domain: getDomain(haEntityId),
+        allowedDomains: ALLOWED_DOMAINS,
+      });
+    }
+
+    // Validate type if being changed
+    if (type !== undefined && !['switch', 'sensor', 'binary_sensor'].includes(type)) {
+      return reply.status(400).send({ error: 'Type must be switch, sensor, or binary_sensor' });
+    }
+
+    // If entity ID is changing, ensure it doesn't collide with another device
+    if (haEntityId !== undefined && haEntityId !== device.haEntityId) {
+      const existing = await db
+        .select()
+        .from(devices)
+        .where(eq(devices.haEntityId, haEntityId))
+        .get();
+
+      if (existing) {
+        return reply.status(409).send({ error: 'Device already exists' });
+      }
+    }
+
+    const result = await db
+      .update(devices)
+      .set({
+        ...(haEntityId !== undefined && { haEntityId }),
+        ...(name !== undefined && { name }),
+        ...(type !== undefined && { type }),
+        ...(batteryEntityId !== undefined && { batteryEntityId: batteryEntityId || null }),
+      })
+      .where(eq(devices.id, deviceId))
+      .returning();
+
+    return result[0];
+  });
+
   // Delete a device
   fastify.delete('/admin/devices/:id', async (request, reply) => {
     const { id } = request.params as { id: string };

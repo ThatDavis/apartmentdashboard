@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  Plus, 
-  Trash2, 
-  ArrowLeft, 
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  ArrowLeft,
   AlertCircle, 
   CheckCircle2,
   Battery,
@@ -47,6 +48,13 @@ export default function AdminDashboard({ onLogout, onBack }: { onLogout: () => v
   const [success, setSuccess] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newDevice, setNewDevice] = useState<AddDeviceForm>({
+    haEntityId: '',
+    name: '',
+    type: 'switch',
+    batteryEntityId: '',
+  });
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editDevice, setEditDevice] = useState<AddDeviceForm>({
     haEntityId: '',
     name: '',
     type: 'switch',
@@ -147,6 +155,52 @@ export default function AdminDashboard({ onLogout, onBack }: { onLogout: () => v
       await fetchDevices();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add device');
+    }
+  };
+
+  const startEditDevice = (device: AdminDevice) => {
+    setEditingId(device.id);
+    setEditDevice({
+      haEntityId: device.haEntityId,
+      name: device.name,
+      type: device.type,
+      batteryEntityId: device.batteryEntityId || '',
+    });
+    setShowAddForm(false);
+    setError('');
+    setSuccess('');
+  };
+
+  const handleEditDevice = async (e: React.FormEvent, deviceId: number) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await fetch(`/api/admin/devices/${deviceId}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          haEntityId: editDevice.haEntityId,
+          name: editDevice.name,
+          type: editDevice.type,
+          batteryEntityId: editDevice.batteryEntityId || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update device');
+      }
+
+      setSuccess(`Updated "${editDevice.name}"`);
+      setEditingId(null);
+      await fetchDevices();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update device');
     }
   };
 
@@ -397,6 +451,85 @@ export default function AdminDashboard({ onLogout, onBack }: { onLogout: () => v
                   <div className="space-y-3">
                     {devices.map((device) => {
                       const Icon = getDeviceIcon(device.type);
+
+                      if (editingId === device.id) {
+                        return (
+                          <div
+                            key={device.id}
+                            className="glass-card rounded-2xl p-5 space-y-4 animate-fade-in"
+                          >
+                            <h3 className="font-semibold text-text">Edit Device</h3>
+
+                            <form onSubmit={(e) => handleEditDevice(e, device.id)} className="space-y-4">
+                              <div>
+                                <label className="block text-sm font-medium text-text-secondary mb-1.5">Entity ID</label>
+                                <input
+                                  type="text"
+                                  value={editDevice.haEntityId}
+                                  onChange={(e) => setEditDevice({ ...editDevice, haEntityId: e.target.value })}
+                                  placeholder="switch.living_room"
+                                  className="w-full px-4 py-3 rounded-xl glass-input text-text placeholder-text-muted"
+                                  required
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-text-secondary mb-1.5">Display Name</label>
+                                <input
+                                  type="text"
+                                  value={editDevice.name}
+                                  onChange={(e) => setEditDevice({ ...editDevice, name: e.target.value })}
+                                  placeholder="Living Room Light"
+                                  className="w-full px-4 py-3 rounded-xl glass-input text-text placeholder-text-muted"
+                                  required
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-text-secondary mb-1.5">Type</label>
+                                <select
+                                  value={editDevice.type}
+                                  onChange={(e) => setEditDevice({ ...editDevice, type: e.target.value })}
+                                  className="w-full px-4 py-3 rounded-xl glass-input text-text"
+                                >
+                                  <option value="switch">Switch</option>
+                                  <option value="sensor">Sensor</option>
+                                  <option value="binary_sensor">Binary Sensor</option>
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-text-secondary mb-1.5">Battery Entity ID (optional)</label>
+                                <input
+                                  type="text"
+                                  value={editDevice.batteryEntityId}
+                                  onChange={(e) => setEditDevice({ ...editDevice, batteryEntityId: e.target.value })}
+                                  placeholder="sensor.living_room_battery"
+                                  className="w-full px-4 py-3 rounded-xl glass-input text-text placeholder-text-muted"
+                                />
+                              </div>
+
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingId(null)}
+                                  className="flex-1 py-3 rounded-xl glass-button text-text-secondary font-medium"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="submit"
+                                  className="flex-1 py-3 rounded-xl glass-button-primary text-white font-medium flex items-center justify-center gap-2"
+                                >
+                                  <CheckCircle2 className="w-4 h-4" />
+                                  Save Changes
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        );
+                      }
+
                       return (
                         <div
                           key={device.id}
@@ -423,13 +556,22 @@ export default function AdminDashboard({ onLogout, onBack }: { onLogout: () => v
                             </div>
                           </div>
 
-                          <button
-                            onClick={() => handleDeleteDevice(device.id, device.name)}
-                            className="p-2.5 text-text-muted hover:text-danger hover:bg-danger/10 rounded-xl transition-all flex-shrink-0 ml-3"
-                            aria-label={`Remove ${device.name}`}
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
+                          <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                            <button
+                              onClick={() => startEditDevice(device)}
+                              className="p-2.5 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                              aria-label={`Edit ${device.name}`}
+                            >
+                              <Pencil className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteDevice(device.id, device.name)}
+                              className="p-2.5 text-text-muted hover:text-danger hover:bg-danger/10 rounded-xl transition-all"
+                              aria-label={`Remove ${device.name}`}
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
