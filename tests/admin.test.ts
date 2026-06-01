@@ -244,6 +244,112 @@ describe('Admin Routes', () => {
     });
   });
 
+  describe('PATCH /api/admin/devices/:id', () => {
+    async function createDevice(overrides = {}) {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/admin/devices',
+        headers: { authorization: `Bearer ${adminToken}` },
+        payload: { haEntityId: 'switch.test', name: 'Test', type: 'switch', ...overrides },
+      });
+      return JSON.parse(res.body);
+    }
+
+    it('should allow admin to update device fields', async () => {
+      const device = await createDevice();
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/devices/${device.id}`,
+        headers: { authorization: `Bearer ${adminToken}` },
+        payload: { name: 'Renamed', type: 'sensor', batteryEntityId: 'sensor.test_battery' },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.name).toBe('Renamed');
+      expect(body.type).toBe('sensor');
+      expect(body.batteryEntityId).toBe('sensor.test_battery');
+      expect(body.haEntityId).toBe('switch.test');
+    });
+
+    it('should clear battery entity when passed empty', async () => {
+      const device = await createDevice({ batteryEntityId: 'sensor.test_battery' });
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/devices/${device.id}`,
+        headers: { authorization: `Bearer ${adminToken}` },
+        payload: { batteryEntityId: '' },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body).batteryEntityId).toBeNull();
+    });
+
+    it('should reject an invalid type', async () => {
+      const device = await createDevice();
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/devices/${device.id}`,
+        headers: { authorization: `Bearer ${adminToken}` },
+        payload: { type: 'bogus' },
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('should reject a disallowed domain', async () => {
+      const device = await createDevice();
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/devices/${device.id}`,
+        headers: { authorization: `Bearer ${adminToken}` },
+        payload: { haEntityId: 'camera.front_door' },
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('should reject changing entity ID to one that already exists', async () => {
+      const first = await createDevice({ haEntityId: 'switch.one', name: 'One' });
+      await createDevice({ haEntityId: 'switch.two', name: 'Two' });
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/devices/${first.id}`,
+        headers: { authorization: `Bearer ${adminToken}` },
+        payload: { haEntityId: 'switch.two' },
+      });
+
+      expect(response.statusCode).toBe(409);
+    });
+
+    it('should return 404 for non-existent device', async () => {
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/admin/devices/99999',
+        headers: { authorization: `Bearer ${adminToken}` },
+        payload: { name: 'Nope' },
+      });
+
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('should reject non-admin users', async () => {
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/admin/devices/1',
+        headers: { authorization: `Bearer ${userToken}` },
+        payload: { name: 'Nope' },
+      });
+
+      expect(response.statusCode).toBe(403);
+    });
+  });
+
   describe('GET /api/admin/users', () => {
     it('should allow admin to list users', async () => {
       const response = await app.inject({

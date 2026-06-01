@@ -8,8 +8,10 @@ import { authRoutes } from './routes/auth.js';
 import { healthRoutes } from './routes/health.js';
 import { deviceRoutes } from './routes/devices.js';
 import { adminRoutes } from './routes/admin.js';
+import { scheduleRoutes } from './routes/schedules.js';
 import { homeAssistantPlugin } from './services/homeAssistant.js';
 import { historyCollector } from './services/historyCollector.js';
+import { scheduleExecutor } from './services/scheduleExecutor.js';
 import { authMiddleware, AuthenticatedRequest } from './middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -61,6 +63,7 @@ await app.register(authRoutes, { prefix: '/api' });
 await app.register(healthRoutes, { prefix: '/api' });
 await app.register(deviceRoutes, { prefix: '/api' });
 await app.register(adminRoutes, { prefix: '/api' });
+await app.register(scheduleRoutes, { prefix: '/api' });
 
 // SPA fallback for client-side routing
 app.get('/', async (_request, reply) => {
@@ -83,8 +86,12 @@ try {
   await app.listen({ port: PORT, host: '0.0.0.0' });
   app.log.info(`Server running on http://localhost:${PORT}`);
 
-  // Start background sensor history collection
+  // Start background services
   historyCollector.start();
+  
+  // Handle restart: turn off all scheduled switches before starting scheduler
+  await scheduleExecutor.handleServerRestart();
+  scheduleExecutor.start();
 } catch (err) {
   app.log.error(err);
   process.exit(1);

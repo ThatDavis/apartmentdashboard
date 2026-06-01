@@ -51,7 +51,7 @@
 
 ## Active Feature
 
-- [ ] Admin user management: delete users and change PINs (Issue #15, branch feature/15-admin-user-management) — In Progress
+- [ ] Visual switch scheduling with twilight timeline (Issue #17, branch feature/17-switch-scheduling-twilight) — In Progress
 
 ## Completed Features
 
