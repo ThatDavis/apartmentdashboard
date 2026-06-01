@@ -37,6 +37,7 @@
 ### Milestone 3: Sharing & Access
 - [x] Admin role for device management
 - [x] Domain whitelist for device security
+- [ ] Admin user management: delete users and change PINs (Issue #15)
 - [ ] Multiple PINs per user
 - [ ] Access logs
 - [ ] Device grouping by room/area

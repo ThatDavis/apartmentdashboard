@@ -1,9 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import { db } from '../db/index.js';
-import { devices } from '../db/schema.js';
+import { devices, users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { haService } from '../services/homeAssistant.js';
 import { AuthenticatedRequest, requireAdmin } from '../middleware/auth.js';
+import bcrypt from 'bcryptjs';
 
 const ALLOWED_DOMAINS = (process.env.ALLOWED_DOMAINS || 'switch,light,sensor,binary_sensor')
   .split(',')
@@ -125,5 +126,85 @@ export async function adminRoutes(fastify: FastifyInstance) {
       domain: getDomain(state.entity_id),
       valid: true,
     };
+  });
+
+  // --- User Management ---
+
+  // List all users (without PIN hashes)
+  fastify.get('/admin/users', async () => {
+    const allUsers = await db.select().from(users).all();
+    return allUsers.map(u => ({
+      id: u.id,
+      username: u.username,
+      isAdmin: u.isAdmin,
+      createdAt: u.createdAt,
+    }));
+  });
+
+  // Delete a user
+  fastify.delete('/admin/users/:id', async (request: AuthenticatedRequest, reply) => {
+    const { id } = request.params as { id: string };
+    const userId = parseInt(id, 10);
+
+    if (isNaN(userId)) {
+      return reply.status(400).send({ error: 'Invalid user ID' });
+    }
+
+    // Prevent self-deletion
+    if (request.user?.userId === userId) {
+      return reply.status(403).send({ error: 'You cannot delete your own account' });
+    }
+
+    const user = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .get();
+
+    if (!user) {
+      return reply.status(404).send({ error: 'User not found' });
+    }
+
+    await db.delete(users).where(eq(users.id, userId));
+
+    return { success: true, message: 'User deleted' };
+  });
+
+  // Update user PIN
+  interface UpdatePinBody {
+    pin: string;
+  }
+
+  fastify.patch<{ Body: UpdatePinBody }>('/admin/users/:id/pin', async (request: AuthenticatedRequest, reply) => {
+    const { id } = request.params as { id: string };
+    const userId = parseInt(id, 10);
+    const { pin } = request.body;
+
+    if (isNaN(userId)) {
+      return reply.status(400).send({ error: 'Invalid user ID' });
+    }
+
+    if (!pin || pin.length < 4 || pin.length > 6) {
+      return reply.status(400).send({ error: 'PIN must be 4-6 digits' });
+    }
+
+    const user = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .get();
+
+    if (!user) {
+      return reply.status(404).send({ error: 'User not found' });
+    }
+
+    const pinHash = await bcrypt.hash(pin, 10);
+
+    await db
+      .update(users)
+      .set({ pinHash, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+
+    return { success: true, message: 'PIN updated' };
   });
 }
