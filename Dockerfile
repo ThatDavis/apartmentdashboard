@@ -47,7 +47,7 @@ RUN cd node_modules/better-sqlite3 && pnpm rebuild
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
 
-# Copy drizzle migrations
+# Copy drizzle migrations (must be at /app/drizzle for migrate script)
 COPY --from=builder /app/drizzle ./drizzle
 
 # Copy startup script
