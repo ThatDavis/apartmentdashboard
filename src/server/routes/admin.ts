@@ -175,10 +175,10 @@ export async function adminRoutes(fastify: FastifyInstance) {
     pin: string;
   }
 
-  fastify.patch<{ Body: UpdatePinBody }>('/admin/users/:id/pin', async (request: AuthenticatedRequest, reply) => {
+  fastify.patch('/admin/users/:id/pin', async (request: AuthenticatedRequest, reply) => {
     const { id } = request.params as { id: string };
     const userId = parseInt(id, 10);
-    const { pin } = request.body;
+    const { pin } = request.body as UpdatePinBody;
 
     if (isNaN(userId)) {
       return reply.status(400).send({ error: 'Invalid user ID' });
