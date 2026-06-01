@@ -21,6 +21,8 @@ A PIN-protected mobile-friendly web app for sharing Home Assistant device data (
 - **Device Dashboard** — Mobile-optimized view of shared devices
 - **Real-time Updates** — Live device status via 5-second polling
 - **Switch Control** — Toggle on/off switches directly from the dashboard
+- **Switch Scheduling** — Visual 24-hour scheduler with civil twilight display
+- **Admin Panel** — Manage devices, users, and PINs (admin-only)
 - **Battery Monitoring** — Visual battery indicators with low-battery warnings
 - **Offline Detection** — Clearly shows when devices are unavailable
 - **Account Security** — Auto-lockout after 5 failed login attempts
@@ -50,7 +52,10 @@ cp .env.example .env
 # Run database migrations
 pnpm db:migrate
 
-# Create your first user
+# Create your first admin user
+pnpm db:seed admin 1234 --admin
+
+# Create a regular user
 pnpm db:seed neighbor1 1234
 
 # Start development server
@@ -159,9 +164,14 @@ docker compose up -d
 ### Create Users (Docker)
 
 ```bash
-# Create a user inside the container
-docker compose exec app npm run db:seed neighbor1 1234
+# Create an admin user (required for device management)
+docker compose exec app node scripts/seed-user-prod.mjs admin 1234 --admin
+
+# Create a regular user
+docker compose exec app node scripts/seed-user-prod.mjs neighbor1 1234
 ```
+
+**Note:** Admin users can access the Admin Panel (gear icon) to manage devices and other users. At least one admin is required to add shared devices.
 
 ### Environment Variables
 

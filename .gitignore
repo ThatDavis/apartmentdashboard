@@ -17,9 +17,8 @@ data/
 *.db
 *.db-journal
 
-# Drizzle metadata (generated)
-drizzle/meta/
-drizzle/*.json
+# Drizzle generated snapshots (keep journal, ignore snapshots if needed)
+# drizzle/meta/  # COMMENTED OUT - journal.json needed for migrations
 
 # Logs
 logs/
