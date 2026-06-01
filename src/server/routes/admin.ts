@@ -232,6 +232,51 @@ export async function adminRoutes(fastify: FastifyInstance) {
     return { success: true, message: 'User deleted' };
   });
 
+  // Create a new user
+  interface CreateUserBody {
+    username: string;
+    pin: string;
+    isAdmin?: boolean;
+  }
+
+  fastify.post('/admin/users', async (request: AuthenticatedRequest, reply) => {
+    const { username, pin, isAdmin } = request.body as CreateUserBody;
+
+    if (!username || username.length < 2) {
+      return reply.status(400).send({ error: 'Username must be at least 2 characters' });
+    }
+
+    if (!pin || pin.length < 4 || pin.length > 6) {
+      return reply.status(400).send({ error: 'PIN must be 4-6 digits' });
+    }
+
+    // Check if username already exists
+    const existing = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username))
+      .get();
+
+    if (existing) {
+      return reply.status(409).send({ error: 'Username already exists' });
+    }
+
+    const pinHash = await bcrypt.hash(pin, 10);
+
+    const result = await db.insert(users).values({
+      username,
+      pinHash,
+      isAdmin: isAdmin || false,
+    }).returning();
+
+    return {
+      id: result[0].id,
+      username: result[0].username,
+      isAdmin: result[0].isAdmin,
+      createdAt: result[0].createdAt,
+    };
+  });
+
   // Update user PIN
   interface UpdatePinBody {
     pin: string;

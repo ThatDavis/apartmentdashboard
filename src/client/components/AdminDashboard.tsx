@@ -61,6 +61,9 @@ export default function AdminDashboard({ onLogout, onBack }: { onLogout: () => v
     batteryEntityId: '',
   });
 
+  const [showAddUserForm, setShowAddUserForm] = useState(false);
+  const [newUser, setNewUser] = useState({ username: '', pin: '', isAdmin: false });
+
   const token = localStorage.getItem('token');
 
   const fetchDevices = useCallback(async () => {
@@ -271,6 +274,44 @@ export default function AdminDashboard({ onLogout, onBack }: { onLogout: () => v
       setSuccess(`Updated PIN for "${username}"`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update PIN');
+    }
+  };
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (newUser.pin.length < 4 || newUser.pin.length > 6 || !/^\d+$/.test(newUser.pin)) {
+      setError('PIN must be 4-6 digits');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: newUser.username,
+          pin: newUser.pin,
+          isAdmin: newUser.isAdmin,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create user');
+      }
+
+      setSuccess(`Created user "${newUser.username}"`);
+      setNewUser({ username: '', pin: '', isAdmin: false });
+      setShowAddUserForm(false);
+      await fetchUsers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create user');
     }
   };
 
@@ -584,6 +625,72 @@ export default function AdminDashboard({ onLogout, onBack }: { onLogout: () => v
           {/* Users Tab */}
           {activeTab === 'users' && (
             <div className="space-y-5 animate-fade-in">
+              {/* Add User Button */}
+              <button
+                onClick={() => setShowAddUserForm(!showAddUserForm)}
+                className="w-full glass-card rounded-2xl py-3.5 px-4 font-medium text-primary text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                {showAddUserForm ? 'Cancel' : 'Add New User'}
+              </button>
+
+              {/* Add User Form */}
+              {showAddUserForm && (
+                <div className="glass-card rounded-2xl p-5 space-y-4 animate-fade-in">
+                  <h3 className="font-semibold text-text">Add User</h3>
+                  
+                  <form onSubmit={handleAddUser} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-text-secondary mb-1.5">Username</label>
+                      <input
+                        type="text"
+                        value={newUser.username}
+                        onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+                        placeholder="neighbor1"
+                        className="w-full px-4 py-3 rounded-xl glass-input text-text placeholder-text-muted"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-text-secondary mb-1.5">PIN Code</label>
+                      <input
+                        type="password"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={6}
+                        value={newUser.pin}
+                        onChange={(e) => setNewUser({ ...newUser, pin: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl glass-input text-text placeholder-text-muted tracking-widest"
+                        placeholder="••••••"
+                        required
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="isAdmin"
+                        checked={newUser.isAdmin}
+                        onChange={(e) => setNewUser({ ...newUser, isAdmin: e.target.checked })}
+                        className="w-5 h-5 rounded border-border text-primary focus:ring-primary"
+                      />
+                      <label htmlFor="isAdmin" className="text-sm text-text-secondary">
+                        Admin user (can manage devices and other users)
+                      </label>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-3 rounded-xl glass-button-primary text-white font-medium flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Create User
+                    </button>
+                  </form>
+                </div>
+              )}
+
               <section>
                 <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-4 px-1">
                   Users ({users.length})
