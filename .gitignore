@@ -17,8 +17,9 @@ data/
 *.db
 *.db-journal
 
-# Drizzle
-drizzle/
+# Drizzle metadata (generated)
+drizzle/meta/
+drizzle/*.json
 
 # Logs
 logs/
