@@ -6,6 +6,6 @@ describe('App', () => {
   it('renders login form when not authenticated', () => {
     render(<App />);
     expect(screen.getByText('Apartment Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('Enter your credentials')).toBeInTheDocument();
+    expect(screen.getByText('Welcome back')).toBeInTheDocument();
   });
 });

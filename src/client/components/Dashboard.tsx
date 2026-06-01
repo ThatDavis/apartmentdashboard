@@ -1,4 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
+import { 
+  Lightbulb, 
+  Zap, 
+  Thermometer, 
+  Droplets, 
+  Battery, 
+  BatteryWarning, 
+  BatteryLow,
+  Power,
+  Settings,
+  LogOut,
+  Wifi,
+  WifiOff,
+  Activity,
+  Sun,
+  Moon
+} from 'lucide-react';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -21,6 +38,8 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
   const [devices, setDevices] = useState<Device[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [greeting, setGreeting] = useState('');
 
   const fetchDevices = useCallback(async () => {
     try {
@@ -50,7 +69,25 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
     setIsLoading(false);
 
     const interval = setInterval(fetchDevices, 5000);
-    return () => clearInterval(interval);
+    const timeInterval = setInterval(() => {
+      const now = new Date();
+      setCurrentTime(now);
+      const hour = now.getHours();
+      if (hour < 12) setGreeting('Good morning');
+      else if (hour < 17) setGreeting('Good afternoon');
+      else setGreeting('Good evening');
+    }, 60000);
+    
+    // Set initial greeting
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting('Good morning');
+    else if (hour < 17) setGreeting('Good afternoon');
+    else setGreeting('Good evening');
+    
+    return () => {
+      clearInterval(interval);
+      clearInterval(timeInterval);
+    };
   }, [fetchDevices]);
 
   const handleToggle = async (deviceId: number) => {
@@ -73,90 +110,132 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
 
   const switches = devices.filter(d => d.type === 'switch');
   const sensors = devices.filter(d => d.type === 'sensor' || d.type === 'binary_sensor');
+  const onlineCount = devices.filter(d => d.isOnline).length;
+
+  const formatTime = () => {
+    return currentTime.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
 
   return (
-    <div className="min-h-screen pb-8">
-      {/* Header */}
-      <header className="glass sticky top-0 z-50 border-b border-border">
-        <div className="max-w-lg mx-auto px-4 py-3.5 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-semibold text-text tracking-tight">Dashboard</h1>
-            <p className="text-xs text-text-muted mt-0.5">{devices.length} device{devices.length !== 1 ? 's' : ''} connected</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {isAdmin && onShowAdmin && (
-              <button
-                onClick={onShowAdmin}
-                className="px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 hover:bg-primary/15 rounded-xl transition-glass"
-              >
-                Manage
-              </button>
-            )}
-            <button
-              onClick={onLogout}
-              className="px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-black/5 rounded-xl transition-glass"
-            >
-              Exit
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen pb-8 relative">
+      {/* Ambient background elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[128px]" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[128px]" />
+      </div>
 
-      <div className="max-w-lg mx-auto px-4 pt-5 space-y-5">
-        {/* Error */}
-        {error && (
-          <div className="bg-danger/8 border border-danger/15 rounded-2xl p-3.5 text-danger text-sm">
-            {error}
-          </div>
-        )}
-
-        {/* Switches Section */}
-        {switches.length > 0 && (
-          <section>
-            <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-1">
-              Controls
-            </h2>
-            <div className="space-y-2.5">
-              {switches.map((device) => (
-                <SwitchCard key={device.id} device={device} onToggle={() => handleToggle(device.id)} />
-              ))}
+      <div className="relative z-10">
+        {/* Header */}
+        <header className="px-5 pt-8 pb-6">
+          <div className="max-w-lg mx-auto lg:max-w-4xl lg:max-w-4xl">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-text-muted text-sm font-medium">{greeting}</p>
+                <h1 className="text-4xl font-bold text-text mt-1 tracking-tight">
+                  {formatTime()}
+                </h1>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/20 text-success text-xs font-medium">
+                    <Wifi className="w-3 h-3" />
+                    {onlineCount} online
+                  </span>
+                  {devices.length > onlineCount && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-danger/20 text-danger text-xs font-medium">
+                      <WifiOff className="w-3 h-3" />
+                      {devices.length - onlineCount} offline
+                    </span>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {isAdmin && onShowAdmin && (
+                  <button
+                    onClick={onShowAdmin}
+                    className="p-2.5 rounded-xl glass-button text-text-secondary hover:text-text"
+                  >
+                    <Settings className="w-5 h-5" />
+                  </button>
+                )}
+                <button
+                  onClick={onLogout}
+                  className="p-2.5 rounded-xl glass-button text-text-secondary hover:text-text"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </div>
             </div>
-          </section>
-        )}
-
-        {/* Sensors Section */}
-        {sensors.length > 0 && (
-          <section>
-            <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-1">
-              Sensors
-            </h2>
-            <div className="space-y-2.5">
-              {sensors.map((device) => (
-                <SensorCard key={device.id} device={device} />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Empty State */}
-        {!isLoading && devices.length === 0 && (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-text-muted/10 flex items-center justify-center">
-              <svg className="w-8 h-8 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-            <p className="text-text-muted font-medium">No devices configured</p>
-            <p className="text-text-muted/70 text-sm mt-1">Contact an admin to add devices</p>
           </div>
-        )}
+        </header>
 
-        {/* Loading */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-16">
-            <div className="animate-spin rounded-full h-8 w-8 border-[2.5px] border-primary border-t-transparent" />
-          </div>
-        )}
+        <main className="max-w-lg mx-auto lg:max-w-4xl px-5 space-y-6">
+          {/* Error */}
+          {error && (
+            <div className="glass-card rounded-2xl p-4 border-l-4 border-l-danger animate-fade-in">
+              <p className="text-danger text-sm">{error}</p>
+            </div>
+          )}
+
+          {/* Switches Grid */}
+          {switches.length > 0 && (
+            <section className="animate-fade-in">
+              <div className="flex items-center gap-2 mb-4">
+                <Zap className="w-4 h-4 text-primary-light" />
+                <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider">
+                  Controls
+                </h2>
+              </div>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {switches.map((device) => (
+                  <SwitchCard 
+                    key={device.id} 
+                    device={device} 
+                    onToggle={() => handleToggle(device.id)} 
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Sensors List */}
+          {sensors.length > 0 && (
+            <section className="animate-fade-in">
+              <div className="flex items-center gap-2 mb-4">
+                <Activity className="w-4 h-4 text-primary-light" />
+                <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider">
+                  Sensors
+                </h2>
+              </div>
+              <div className="space-y-3">
+                {sensors.map((device) => (
+                  <SensorCard key={device.id} device={device} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Empty State */}
+          {!isLoading && devices.length === 0 && (
+            <div className="text-center py-20 animate-fade-in">
+              <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
+                <Lightbulb className="w-12 h-12 text-text-muted" />
+              </div>
+              <p className="text-text-muted font-medium text-lg">No devices configured</p>
+              <p className="text-text-muted/70 text-sm mt-2">Contact an admin to add devices</p>
+            </div>
+          )}
+
+          {/* Loading */}
+          {isLoading && (
+            <div className="flex items-center justify-center py-20">
+              <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
+            </div>
+          )}
+        </main>
       </div>
     </div>
   );
@@ -166,37 +245,47 @@ function SwitchCard({ device, onToggle }: { device: Device; onToggle: () => void
   const isOn = device.state === 'on';
   
   return (
-    <div className={`liquid-card rounded-2xl p-4 transition-glass ${!device.isOnline ? 'opacity-50' : ''}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className={`status-dot flex-shrink-0 ${device.isOnline ? (isOn ? 'bg-success' : 'bg-offline') : 'bg-offline'}`} />
-          <div className="min-w-0">
-            <h3 className="font-medium text-text text-[15px] truncate">{device.name}</h3>
-            <p className="text-xs text-text-muted mt-0.5">
-              {device.isOnline ? (isOn ? 'On' : 'Off') : 'Offline'}
-            </p>
+    <div 
+      className={`glass-card rounded-2xl p-4 cursor-pointer transition-all duration-200 active:scale-95 ${
+        isOn ? 'bg-primary/15 border-primary/30' : ''
+      } ${!device.isOnline ? 'opacity-40' : ''}`}
+      onClick={device.isOnline ? onToggle : undefined}
+    >
+      <div className="flex flex-col h-full">
+        <div className="flex items-start justify-between mb-3">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+            isOn 
+              ? 'bg-primary/30 text-primary-light' 
+              : 'bg-text-muted/10 text-text-muted'
+          }`}>
+            <Lightbulb className="w-5 h-5" />
           </div>
-        </div>
-
-        <div className="flex items-center gap-3 flex-shrink-0">
+          
           {device.battery !== null && device.isOnline && (
             <BatteryIndicator battery={device.battery} />
           )}
+        </div>
 
-          {device.isOnline && (
-            <button
-              onClick={onToggle}
-              className={`relative inline-flex h-7 w-12 items-center rounded-full transition-glass ${
-                isOn ? 'bg-success' : 'bg-text-muted/25'
-              }`}
-            >
-              <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-glass ${
-                  isOn ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          )}
+        <div className="mt-auto">
+          <h3 className="font-medium text-text text-sm truncate">{device.name}</h3>
+          <p className={`text-xs mt-1 font-medium ${
+            device.isOnline 
+              ? (isOn ? 'text-primary-light' : 'text-text-muted') 
+              : 'text-text-muted'
+          }`}>
+            {device.isOnline ? (isOn ? 'On' : 'Off') : 'Offline'}
+          </p>
+        </div>
+
+        {/* Toggle indicator */}
+        <div className={`mt-3 h-1.5 rounded-full overflow-hidden ${
+          isOn ? 'bg-primary/20' : 'bg-text-muted/10'
+        }`}>
+          <div 
+            className={`h-full rounded-full transition-all duration-500 ease-out ${
+              isOn ? 'w-full bg-primary' : 'w-0'
+            }`} 
+          />
         </div>
       </div>
     </div>
@@ -208,7 +297,6 @@ function SensorCard({ device }: { device: Device }) {
     if (!device.isOnline) return 'Offline';
     if (device.state === 'unknown') return 'Unknown';
     
-    // Try to get a friendly value from attributes
     const unit = device.attributes?.unit_of_measurement;
     if (unit) {
       return `${device.state} ${unit}`;
@@ -217,13 +305,27 @@ function SensorCard({ device }: { device: Device }) {
     return device.state;
   };
 
+  const getSensorIcon = () => {
+    const name = device.name.toLowerCase();
+    if (name.includes('temp')) return Thermometer;
+    if (name.includes('humid')) return Droplets;
+    return Activity;
+  };
+
+  const Icon = getSensorIcon();
+
   return (
-    <div className={`liquid-card rounded-2xl p-4 transition-glass ${!device.isOnline ? 'opacity-50' : ''}`}>
+    <div className={`glass-card rounded-2xl p-4 ${!device.isOnline ? 'opacity-40' : ''}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`status-dot flex-shrink-0 ${device.isOnline ? 'bg-primary' : 'bg-offline'}`} />
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+            device.isOnline ? 'bg-primary/20 text-primary-light' : 'bg-text-muted/10 text-text-muted'
+          }`}>
+            <Icon className="w-5 h-5" />
+          </div>
+          
           <div className="min-w-0">
-            <h3 className="font-medium text-text text-[15px] truncate">{device.name}</h3>
+            <h3 className="font-medium text-text text-sm truncate">{device.name}</h3>
             <p className="text-xs text-text-muted mt-0.5">{getSensorDisplay()}</p>
           </div>
         </div>
@@ -232,9 +334,7 @@ function SensorCard({ device }: { device: Device }) {
           {device.battery !== null && device.isOnline && (
             <BatteryIndicator battery={device.battery} />
           )}
-          <div className="text-right">
-            <span className="text-lg font-semibold text-text">{device.state}</span>
-          </div>
+          <span className="text-lg font-semibold text-text">{device.state}</span>
         </div>
       </div>
     </div>
@@ -242,17 +342,27 @@ function SensorCard({ device }: { device: Device }) {
 }
 
 function BatteryIndicator({ battery }: { battery: number }) {
-  const getColor = () => {
-    if (battery <= 20) return 'text-danger';
-    if (battery <= 40) return 'text-warning';
-    return 'text-success';
-  };
+  if (battery <= 20) {
+    return (
+      <div className="flex items-center gap-1 text-xs font-medium text-danger">
+        <BatteryWarning className="w-3.5 h-3.5" />
+        {battery}%
+      </div>
+    );
+  }
+  
+  if (battery <= 40) {
+    return (
+      <div className="flex items-center gap-1 text-xs font-medium text-warning">
+        <BatteryLow className="w-3.5 h-3.5" />
+        {battery}%
+      </div>
+    );
+  }
 
   return (
-    <div className={`flex items-center gap-1 text-xs font-medium ${getColor()}`}>
-      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M2 7a2 2 0 012-2h11a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V7zm13 1.5a.5.5 0 00-.5-.5h-10a.5.5 0 00-.5.5v3a.5.5 0 00.5.5h10a.5.5 0 00.5-.5v-3z" />
-      </svg>
+    <div className="flex items-center gap-1 text-xs font-medium text-success">
+      <Battery className="w-3.5 h-3.5" />
       {battery}%
     </div>
   );

@@ -61,26 +61,36 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-wallpaper">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-primary border-t-transparent"></div>
       </div>
     );
   }
 
   if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
+    return (
+      <div className="bg-wallpaper">
+        <Login onLogin={handleLogin} />
+      </div>
+    );
   }
 
   if (showAdmin && isAdmin) {
-    return <AdminDashboard onLogout={handleLogout} />;
+    return (
+      <div className="bg-wallpaper">
+        <AdminDashboard onLogout={handleLogout} />
+      </div>
+    );
   }
 
   return (
-    <Dashboard
-      onLogout={handleLogout}
-      isAdmin={isAdmin}
-      onShowAdmin={() => setShowAdmin(true)}
-    />
+    <div className="bg-wallpaper">
+      <Dashboard
+        onLogout={handleLogout}
+        isAdmin={isAdmin}
+        onShowAdmin={() => setShowAdmin(true)}
+      />
+    </div>
   );
 }
 
