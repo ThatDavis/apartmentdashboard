@@ -90,7 +90,7 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
     };
   }, [fetchDevices]);
 
-  const handleToggle = async (deviceId: number) => {
+  const handleToggle = useCallback(async (deviceId: number) => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`/api/devices/${deviceId}/toggle`, {
@@ -106,7 +106,7 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to toggle device');
     }
-  };
+  }, [fetchDevices]);
 
   const switches = devices.filter(d => d.type === 'switch');
   const sensors = devices.filter(d => d.type === 'sensor' || d.type === 'binary_sensor');

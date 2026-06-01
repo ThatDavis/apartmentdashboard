@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Login from './components/Login.js';
 import Dashboard from './components/Dashboard.js';
 import AdminDashboard from './components/AdminDashboard.js';
@@ -39,7 +39,7 @@ function App() {
     }
   }, []);
 
-  const handleLogin = (token: string) => {
+  const handleLogin = useCallback((token: string) => {
     localStorage.setItem('token', token);
     setIsAuthenticated(true);
     // Fetch user info to check admin status
@@ -50,14 +50,16 @@ function App() {
       .then((data) => {
         setIsAdmin(data.isAdmin);
       });
-  };
+  }, []);
 
-  const handleLogout = () => {
+  const handleShowAdmin = useCallback(() => setShowAdmin(true), []);
+
+  const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
     setIsAuthenticated(false);
     setIsAdmin(false);
     setShowAdmin(false);
-  };
+  }, []);
 
   if (isLoading) {
     return (
@@ -78,7 +80,7 @@ function App() {
   if (showAdmin && isAdmin) {
     return (
       <div className="bg-wallpaper">
-        <AdminDashboard onLogout={handleLogout} />
+        <AdminDashboard onLogout={handleLogout} onBack={() => setShowAdmin(false)} />
       </div>
     );
   }
@@ -88,7 +90,7 @@ function App() {
       <Dashboard
         onLogout={handleLogout}
         isAdmin={isAdmin}
-        onShowAdmin={() => setShowAdmin(true)}
+        onShowAdmin={handleShowAdmin}
       />
     </div>
   );

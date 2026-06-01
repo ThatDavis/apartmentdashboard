@@ -28,7 +28,7 @@ interface AddDeviceForm {
   batteryEntityId: string;
 }
 
-export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
+export default function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: () => void }) {
   const [devices, setDevices] = useState<AdminDevice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -149,7 +149,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         <header className="px-5 pt-8 pb-6">
           <div className="max-w-lg mx-auto lg:max-w-4xl">
             <button
-              onClick={onLogout}
+              onClick={onBack}
               className="mb-4 flex items-center gap-1.5 text-text-muted hover:text-text transition-colors text-sm"
             >
               <ArrowLeft className="w-4 h-4" />
