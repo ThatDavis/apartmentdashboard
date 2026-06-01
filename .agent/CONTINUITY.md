@@ -67,6 +67,15 @@ Goal: Connect to Home Assistant, display sensor data and switch controls with PI
 |  |    ✓ Add offline device detection |
 | Sun May 31 2026 | Completed feature: Admin device security with domain whitelist. All tests passing (33/33). |
 | Sun May 31 2026 | Completed feature: Admin user management: delete users and change PINs (Issue #15, PR #16). All 41 tests passing. |
+| Sun May 31 2026 | Started feature: Visual switch scheduling with twilight timeline (Issue #17) on branch feature/17-switch-scheduling-twilight. |
+|  |    — Add schedules table to database schema |
+|  |    — Create twilight service (fetch sunrise-sunset.org API at midnight CT) |
+|  |    — Add schedule CRUD API endpoints |
+|  |    — Build background scheduler (60s interval, DST-aware, Chicago timezone) |
+|  |    — Create 24h range slider component with twilight visualization |
+|  |    — Integrate schedule editor into Dashboard switch cards |
+|  |    — Handle server restart: turn off all scheduled switches |
+|  |    — Write tests for schedule execution and DST handling |
 |  |    ✓ Add API endpoints: list users, delete user, update PIN |
 |  |    ✓ Prevent self-deletion in API |
 |  |    ✓ Add Users tab to AdminDashboard |

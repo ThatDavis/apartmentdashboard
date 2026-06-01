@@ -34,3 +34,24 @@ export const deviceHistory = sqliteTable('device_history', {
   state: text('state').notNull(),
   recordedAt: integer('recorded_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
+
+export const schedules = sqliteTable('schedules', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  deviceId: integer('device_id').notNull(),
+  userId: integer('user_id').notNull(),
+  startTime: text('start_time').notNull(), // HH:MM format (24h)
+  endTime: text('end_time').notNull(), // HH:MM format (24h)
+  daysOfWeek: text('days_of_week').notNull().default('1,2,3,4,5,6,7'), // Comma-separated: 1=Mon, 7=Sun
+  enabled: integer('enabled', { mode: 'boolean' }).default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
+export const twilightCache = sqliteTable('twilight_cache', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  date: text('date').notNull().unique(), // YYYY-MM-DD
+  dawn: text('dawn').notNull(), // HH:MM
+  dusk: text('dusk').notNull(), // HH:MM
+  sunrise: text('sunrise').notNull(), // HH:MM
+  sunset: text('sunset').notNull(), // HH:MM
+  fetchedAt: integer('fetched_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
