@@ -19,6 +19,14 @@ Goal: Connect to Home Assistant, display sensor data and switch controls with PI
 - [x] Account lockout after failed PIN attempts — Completed
 - [x] Health endpoint for HA connectivity — Completed
 
+### Milestone 3: Sharing & Access (In Progress)
+- [x] Admin role for device management
+- [x] Domain whitelist for device security
+- [x] Admin user management: delete users and change PINs (Issue #15, PR #16) — Completed
+- [ ] Multiple PINs per user
+- [ ] Access logs
+- [ ] Device grouping by room/area
+
 ### Future Milestones
 - Milestone 2: Data history and trends
 - Milestone 3: Enhanced sharing and access controls
@@ -58,6 +66,12 @@ Goal: Connect to Home Assistant, display sensor data and switch controls with PI
 |  |    ✓ Add battery indicator with color coding |
 |  |    ✓ Add offline device detection |
 | Sun May 31 2026 | Completed feature: Admin device security with domain whitelist. All tests passing (33/33). |
+| Sun May 31 2026 | Completed feature: Admin user management: delete users and change PINs (Issue #15, PR #16). All 41 tests passing. |
+|  |    ✓ Add API endpoints: list users, delete user, update PIN |
+|  |    ✓ Prevent self-deletion in API |
+|  |    ✓ Add Users tab to AdminDashboard |
+|  |    ✓ Wire up delete and change PIN UI |
+|  |    ✓ Update tests and verify build |
 |  |    ✓ Add isAdmin flag to users table |
 |  |    ✓ Remove isShared flag from devices (whitelist-only) |
 |  |    ✓ Enforce domain whitelist: switch, light, sensor, binary_sensor |
@@ -103,6 +117,12 @@ Goal: Connect to Home Assistant, display sensor data and switch controls with PI
 - Removed sync-ha-devices.mjs (security risk: exposed all HA entities)
 - Updated seed script to support --admin flag
 - All tests passing (33/33)
+
+### Admin User Management (Sun May 31 2026)
+- Added tabbed admin panel with Devices and Users sections
+- Implemented user listing, deletion (with self-deletion prevention), and PIN changes
+- Added 8 new tests for user management API endpoints
+- All 41 tests passing, build clean
 
 ### Milestone 1 Complete
 All 10 features implemented and merged. Project is functional end-to-end.

@@ -37,6 +37,7 @@
 ### Milestone 3: Sharing & Access
 - [x] Admin role for device management
 - [x] Domain whitelist for device security
+- [ ] Admin user management: delete users and change PINs (Issue #15)
 - [ ] Multiple PINs per user
 - [ ] Access logs
 - [ ] Device grouping by room/area
@@ -50,7 +51,7 @@
 
 ## Active Feature
 
-*No active feature. Run `/dev:start-feature` to begin.*
+- [ ] Admin user management: delete users and change PINs (Issue #15, branch feature/15-admin-user-management) — In Progress
 
 ## Completed Features
 

@@ -243,4 +243,147 @@ describe('Admin Routes', () => {
       expect(response.statusCode).toBe(403);
     });
   });
+
+  describe('GET /api/admin/users', () => {
+    it('should allow admin to list users', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/admin/users',
+        headers: { authorization: `Bearer ${adminToken}` },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(Array.isArray(body)).toBe(true);
+      expect(body.length).toBe(2);
+      expect(body[0]).toHaveProperty('username');
+      expect(body[0]).not.toHaveProperty('pinHash');
+    });
+
+    it('should reject non-admin users', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/admin/users',
+        headers: { authorization: `Bearer ${userToken}` },
+      });
+
+      expect(response.statusCode).toBe(403);
+    });
+  });
+
+  describe('DELETE /api/admin/users/:id', () => {
+    it('should allow admin to delete a user', async () => {
+      // Get user ID first
+      const usersResponse = await app.inject({
+        method: 'GET',
+        url: '/api/admin/users',
+        headers: { authorization: `Bearer ${adminToken}` },
+      });
+      const userList = JSON.parse(usersResponse.body);
+      const userToDelete = userList.find((u: { username: string }) => u.username === 'user');
+
+      const response = await app.inject({
+        method: 'DELETE',
+        url: `/api/admin/users/${userToDelete.id}`,
+        headers: { authorization: `Bearer ${adminToken}` },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+    });
+
+    it('should prevent self-deletion', async () => {
+      // Get admin ID
+      const usersResponse = await app.inject({
+        method: 'GET',
+        url: '/api/admin/users',
+        headers: { authorization: `Bearer ${adminToken}` },
+      });
+      const userList = JSON.parse(usersResponse.body);
+      const adminUser = userList.find((u: { username: string }) => u.username === 'admin');
+
+      const response = await app.inject({
+        method: 'DELETE',
+        url: `/api/admin/users/${adminUser.id}`,
+        headers: { authorization: `Bearer ${adminToken}` },
+      });
+
+      expect(response.statusCode).toBe(403);
+      const body = JSON.parse(response.body);
+      expect(body.error).toBe('You cannot delete your own account');
+    });
+
+    it('should reject non-admin users', async () => {
+      const response = await app.inject({
+        method: 'DELETE',
+        url: '/api/admin/users/1',
+        headers: { authorization: `Bearer ${userToken}` },
+      });
+
+      expect(response.statusCode).toBe(403);
+    });
+  });
+
+  describe('PATCH /api/admin/users/:id/pin', () => {
+    it('should allow admin to change a user PIN', async () => {
+      // Get user ID first
+      const usersResponse = await app.inject({
+        method: 'GET',
+        url: '/api/admin/users',
+        headers: { authorization: `Bearer ${adminToken}` },
+      });
+      const userList = JSON.parse(usersResponse.body);
+      const userToUpdate = userList.find((u: { username: string }) => u.username === 'user');
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/users/${userToUpdate.id}/pin`,
+        headers: { authorization: `Bearer ${adminToken}` },
+        payload: { pin: '5678' },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+
+      // Verify new PIN works
+      const loginResponse = await app.inject({
+        method: 'POST',
+        url: '/api/login',
+        payload: { username: 'user', pin: '5678' },
+      });
+      expect(loginResponse.statusCode).toBe(200);
+    });
+
+    it('should reject invalid PIN length', async () => {
+      const usersResponse = await app.inject({
+        method: 'GET',
+        url: '/api/admin/users',
+        headers: { authorization: `Bearer ${adminToken}` },
+      });
+      const userList = JSON.parse(usersResponse.body);
+      const userToUpdate = userList.find((u: { username: string }) => u.username === 'user');
+
+      const response = await app.inject({
+        method: 'PATCH',
+        url: `/api/admin/users/${userToUpdate.id}/pin`,
+        headers: { authorization: `Bearer ${adminToken}` },
+        payload: { pin: '12' },
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('should reject non-admin users', async () => {
+      const response = await app.inject({
+        method: 'PATCH',
+        url: '/api/admin/users/1/pin',
+        headers: { authorization: `Bearer ${userToken}` },
+        payload: { pin: '5678' },
+      });
+
+      expect(response.statusCode).toBe(403);
+    });
+  });
 });

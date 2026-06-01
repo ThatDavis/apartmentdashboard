@@ -7,7 +7,10 @@ import {
   CheckCircle2,
   Battery,
   Zap,
-  Activity
+  Activity,
+  Users,
+  Settings,
+  KeyRound
 } from 'lucide-react';
 
 interface AdminDevice {
@@ -21,6 +24,13 @@ interface AdminDevice {
   createdAt: string;
 }
 
+interface User {
+  id: number;
+  username: string;
+  isAdmin: boolean;
+  createdAt: string;
+}
+
 interface AddDeviceForm {
   haEntityId: string;
   name: string;
@@ -29,7 +39,9 @@ interface AddDeviceForm {
 }
 
 export default function AdminDashboard({ onLogout, onBack }: { onLogout: () => void; onBack: () => void }) {
+  const [activeTab, setActiveTab] = useState<'devices' | 'users'>('devices');
   const [devices, setDevices] = useState<AdminDevice[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -69,10 +81,40 @@ export default function AdminDashboard({ onLogout, onBack }: { onLogout: () => v
     }
   }, [token, onLogout]);
 
+  const fetchUsers = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/users', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          onLogout();
+          return;
+        }
+        if (response.status === 403) {
+          setError('Admin access required');
+          return;
+        }
+        throw new Error('Failed to fetch users');
+      }
+
+      const data = await response.json();
+      setUsers(data);
+      setError('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load users');
+    }
+  }, [token, onLogout]);
+
   useEffect(() => {
-    fetchDevices();
+    if (activeTab === 'devices') {
+      fetchDevices();
+    } else {
+      fetchUsers();
+    }
     setIsLoading(false);
-  }, [fetchDevices]);
+  }, [activeTab, fetchDevices, fetchUsers]);
 
   const handleAddDevice = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,6 +170,56 @@ export default function AdminDashboard({ onLogout, onBack }: { onLogout: () => v
     }
   };
 
+  const handleDeleteUser = async (userId: number, username: string) => {
+    if (!confirm(`Delete user "${username}"? This cannot be undone.`)) return;
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete user');
+      }
+
+      setSuccess(`Deleted user "${username}"`);
+      await fetchUsers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete user');
+    }
+  };
+
+  const handleChangePin = async (userId: number, username: string) => {
+    const newPin = prompt(`Enter new PIN for "${username}" (4-6 digits):`);
+    if (!newPin) return;
+    if (newPin.length < 4 || newPin.length > 6 || !/^\d+$/.test(newPin)) {
+      setError('PIN must be 4-6 digits');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/pin`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ pin: newPin }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update PIN');
+      }
+
+      setSuccess(`Updated PIN for "${username}"`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update PIN');
+    }
+  };
+
   const getDeviceIcon = (type: string) => {
     switch (type) {
       case 'switch': return Zap;
@@ -155,12 +247,37 @@ export default function AdminDashboard({ onLogout, onBack }: { onLogout: () => v
               <ArrowLeft className="w-4 h-4" />
               Back to Dashboard
             </button>
-            <h1 className="text-3xl font-bold text-text">Device Management</h1>
-            <p className="text-text-muted text-sm mt-1">{devices.length} device{devices.length !== 1 ? 's' : ''} shared</p>
+            <h1 className="text-3xl font-bold text-text">Admin Panel</h1>
           </div>
         </header>
 
         <main className="max-w-lg mx-auto lg:max-w-4xl px-5 space-y-5">
+          {/* Tab Navigation */}
+          <div className="flex gap-2 mb-2">
+            <button
+              onClick={() => setActiveTab('devices')}
+              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                activeTab === 'devices'
+                  ? 'bg-primary text-white shadow-md'
+                  : 'glass-button text-text-secondary hover:text-text'
+              }`}
+            >
+              <Settings className="w-4 h-4" />
+              Devices
+            </button>
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                activeTab === 'users'
+                  ? 'bg-primary text-white shadow-md'
+                  : 'glass-button text-text-secondary hover:text-text'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              Users
+            </button>
+          </div>
+
           {/* Messages */}
           <div className="space-y-2">
             {error && (
@@ -181,141 +298,215 @@ export default function AdminDashboard({ onLogout, onBack }: { onLogout: () => v
             )}
           </div>
 
-          {/* Add Device Button */}
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="w-full glass-card rounded-2xl py-3.5 px-4 font-medium text-primary text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            {showAddForm ? 'Cancel' : 'Add New Device'}
-          </button>
+          {/* Devices Tab */}
+          {activeTab === 'devices' && (
+            <div className="space-y-5 animate-fade-in">
+              {/* Add Device Button */}
+              <button
+                onClick={() => setShowAddForm(!showAddForm)}
+                className="w-full glass-card rounded-2xl py-3.5 px-4 font-medium text-primary text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                {showAddForm ? 'Cancel' : 'Add New Device'}
+              </button>
 
-          {/* Add Device Form */}
-          {showAddForm && (
-            <div className="glass-card rounded-2xl p-5 space-y-4 animate-fade-in">
-              <h3 className="font-semibold text-text">Add Device</h3>
-              
-              <form onSubmit={handleAddDevice} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-1.5">Entity ID</label>
-                  <input
-                    type="text"
-                    value={newDevice.haEntityId}
-                    onChange={(e) => setNewDevice({ ...newDevice, haEntityId: e.target.value })}
-                    placeholder="switch.living_room"
-                    className="w-full px-4 py-3 rounded-xl glass-input text-text placeholder-text-muted"
-                    required
-                  />
+              {/* Add Device Form */}
+              {showAddForm && (
+                <div className="glass-card rounded-2xl p-5 space-y-4 animate-fade-in">
+                  <h3 className="font-semibold text-text">Add Device</h3>
+                  
+                  <form onSubmit={handleAddDevice} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-text-secondary mb-1.5">Entity ID</label>
+                      <input
+                        type="text"
+                        value={newDevice.haEntityId}
+                        onChange={(e) => setNewDevice({ ...newDevice, haEntityId: e.target.value })}
+                        placeholder="switch.living_room"
+                        className="w-full px-4 py-3 rounded-xl glass-input text-text placeholder-text-muted"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-text-secondary mb-1.5">Display Name</label>
+                      <input
+                        type="text"
+                        value={newDevice.name}
+                        onChange={(e) => setNewDevice({ ...newDevice, name: e.target.value })}
+                        placeholder="Living Room Light"
+                        className="w-full px-4 py-3 rounded-xl glass-input text-text placeholder-text-muted"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-text-secondary mb-1.5">Type</label>
+                      <select
+                        value={newDevice.type}
+                        onChange={(e) => setNewDevice({ ...newDevice, type: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl glass-input text-text"
+                      >
+                        <option value="switch">Switch</option>
+                        <option value="sensor">Sensor</option>
+                        <option value="binary_sensor">Binary Sensor</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-text-secondary mb-1.5">Battery Entity ID (optional)</label>
+                      <input
+                        type="text"
+                        value={newDevice.batteryEntityId}
+                        onChange={(e) => setNewDevice({ ...newDevice, batteryEntityId: e.target.value })}
+                        placeholder="sensor.living_room_battery"
+                        className="w-full px-4 py-3 rounded-xl glass-input text-text placeholder-text-muted"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-3 rounded-xl glass-button-primary text-white font-medium flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Device
+                    </button>
+                  </form>
                 </div>
+              )}
 
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-1.5">Display Name</label>
-                  <input
-                    type="text"
-                    value={newDevice.name}
-                    onChange={(e) => setNewDevice({ ...newDevice, name: e.target.value })}
-                    placeholder="Living Room Light"
-                    className="w-full px-4 py-3 rounded-xl glass-input text-text placeholder-text-muted"
-                    required
-                  />
-                </div>
+              {/* Device List */}
+              <section>
+                <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-4 px-1">
+                  Shared Devices ({devices.length})
+                </h2>
+                
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
+                  </div>
+                ) : devices.length === 0 ? (
+                  <div className="text-center py-16">
+                    <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                      <Plus className="w-12 h-12 text-text-muted" />
+                    </div>
+                    <p className="text-text-muted font-medium text-lg">No devices configured</p>
+                    <p className="text-text-muted/70 text-sm mt-2">Add devices to share them</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {devices.map((device) => {
+                      const Icon = getDeviceIcon(device.type);
+                      return (
+                        <div
+                          key={device.id}
+                          className="glass-card rounded-2xl p-4 flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                              <Icon className="w-5 h-5 text-primary-light" />
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="font-medium text-text text-sm truncate">{device.name}</h3>
+                              <p className="text-xs text-text-muted truncate">{device.haEntityId}</p>
+                              <div className="flex items-center gap-2 mt-1.5">
+                                <span className="inline-flex items-center px-2 py-0.5 bg-primary/20 text-primary-light text-xs font-medium rounded-lg">
+                                  {device.type}
+                                </span>
+                                {device.batteryEntityId && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-success/20 text-success text-xs font-medium rounded-lg">
+                                    <Battery className="w-3 h-3" />
+                                    Battery
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-1.5">Type</label>
-                  <select
-                    value={newDevice.type}
-                    onChange={(e) => setNewDevice({ ...newDevice, type: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl glass-input text-text"
-                  >
-                    <option value="switch">Switch</option>
-                    <option value="sensor">Sensor</option>
-                    <option value="binary_sensor">Binary Sensor</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-1.5">Battery Entity ID (optional)</label>
-                  <input
-                    type="text"
-                    value={newDevice.batteryEntityId}
-                    onChange={(e) => setNewDevice({ ...newDevice, batteryEntityId: e.target.value })}
-                    placeholder="sensor.living_room_battery"
-                    className="w-full px-4 py-3 rounded-xl glass-input text-text placeholder-text-muted"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 rounded-xl glass-button-primary text-white font-medium flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Device
-                </button>
-              </form>
+                          <button
+                            onClick={() => handleDeleteDevice(device.id, device.name)}
+                            className="p-2.5 text-text-muted hover:text-danger hover:bg-danger/10 rounded-xl transition-all flex-shrink-0 ml-3"
+                            aria-label={`Remove ${device.name}`}
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
             </div>
           )}
 
-          {/* Device List */}
-          <section>
-            <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-4 px-1">
-              Shared Devices
-            </h2>
-            
-            {isLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
-              </div>
-            ) : devices.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                  <Plus className="w-12 h-12 text-text-muted" />
-                </div>
-                <p className="text-text-muted font-medium text-lg">No devices configured</p>
-                <p className="text-text-muted/70 text-sm mt-2">Add devices to share them</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {devices.map((device) => {
-                  const Icon = getDeviceIcon(device.type);
-                  return (
-                    <div
-                      key={device.id}
-                      className="glass-card rounded-2xl p-4 flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-                          <Icon className="w-5 h-5 text-primary-light" />
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="font-medium text-text text-sm truncate">{device.name}</h3>
-                          <p className="text-xs text-text-muted truncate">{device.haEntityId}</p>
-                          <div className="flex items-center gap-2 mt-1.5">
-                            <span className="inline-flex items-center px-2 py-0.5 bg-primary/20 text-primary-light text-xs font-medium rounded-lg">
-                              {device.type}
-                            </span>
-                            {device.batteryEntityId && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-success/20 text-success text-xs font-medium rounded-lg">
-                                <Battery className="w-3 h-3" />
-                                Battery
+          {/* Users Tab */}
+          {activeTab === 'users' && (
+            <div className="space-y-5 animate-fade-in">
+              <section>
+                <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-4 px-1">
+                  Users ({users.length})
+                </h2>
+                
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
+                  </div>
+                ) : users.length === 0 ? (
+                  <div className="text-center py-16">
+                    <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                      <Users className="w-12 h-12 text-text-muted" />
+                    </div>
+                    <p className="text-text-muted font-medium text-lg">No users found</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {users.map((user) => (
+                      <div
+                        key={user.id}
+                        className="glass-card rounded-2xl p-4 flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-10 h-10 rounded-xl bg-secondary/20 flex items-center justify-center flex-shrink-0">
+                            <Users className="w-5 h-5 text-secondary-light" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-medium text-text text-sm truncate">{user.username}</h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              {user.isAdmin && (
+                                <span className="inline-flex items-center px-2 py-0.5 bg-primary/20 text-primary-light text-xs font-medium rounded-lg">
+                                  Admin
+                                </span>
+                              )}
+                              <span className="text-xs text-text-muted">
+                                Created {new Date(user.createdAt).toLocaleDateString()}
                               </span>
-                            )}
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <button
-                        onClick={() => handleDeleteDevice(device.id, device.name)}
-                        className="p-2.5 text-text-muted hover:text-danger hover:bg-danger/10 rounded-xl transition-all flex-shrink-0 ml-3"
-                        aria-label={`Remove ${device.name}`}
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                          <button
+                            onClick={() => handleChangePin(user.id, user.username)}
+                            className="p-2.5 text-text-muted hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                            aria-label={`Change PIN for ${user.username}`}
+                          >
+                            <KeyRound className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user.id, user.username)}
+                            className="p-2.5 text-text-muted hover:text-danger hover:bg-danger/10 rounded-xl transition-all"
+                            aria-label={`Delete ${user.username}`}
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
+          )}
         </main>
       </div>
     </div>
