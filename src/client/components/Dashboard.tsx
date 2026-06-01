@@ -124,8 +124,8 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
     <div className="min-h-screen pb-8 relative">
       {/* Ambient background elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[128px]" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[128px]" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/15 rounded-full blur-[128px]" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-[128px]" />
       </div>
 
       <div className="relative z-10">
@@ -221,9 +221,9 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
           {/* Empty State */}
           {!isLoading && devices.length === 0 && (
             <div className="text-center py-20 animate-fade-in">
-              <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
-                <Lightbulb className="w-12 h-12 text-text-muted" />
-              </div>
+                <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                  <Lightbulb className="w-12 h-12 text-text-muted" />
+                </div>
               <p className="text-text-muted font-medium text-lg">No devices configured</p>
               <p className="text-text-muted/70 text-sm mt-2">Contact an admin to add devices</p>
             </div>

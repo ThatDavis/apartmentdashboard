@@ -42,14 +42,15 @@ export default function Login({ onLogin }: LoginProps) {
     <div className="min-h-screen flex items-center justify-center px-4 relative">
       {/* Ambient glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[128px]" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary/15 rounded-full blur-[128px]" />
+        <div className="absolute bottom-1/4 right-1/2 translate-x-1/2 w-[400px] h-[400px] bg-secondary/10 rounded-full blur-[128px]" />
       </div>
 
       <div className="w-full max-w-sm lg:max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-10">
-          <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-primary/30 to-purple-500/30 flex items-center justify-center border border-primary/20">
-            <Home className="w-10 h-10 text-primary-light" />
+          <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center border border-primary/20 shadow-lg">
+            <Home className="w-10 h-10 text-primary" />
           </div>
           <h1 className="text-3xl font-bold text-text">Apartment Dashboard</h1>
           <p className="text-text-muted mt-2">Welcome back</p>

@@ -141,7 +141,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     <div className="min-h-screen pb-8 relative">
       {/* Ambient glow */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-purple-500/15 rounded-full blur-[128px]" />
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-[128px]" />
       </div>
 
       <div className="relative z-10">
@@ -267,7 +267,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               </div>
             ) : devices.length === 0 ? (
               <div className="text-center py-16">
-                <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
+                <div className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
                   <Plus className="w-12 h-12 text-text-muted" />
                 </div>
                 <p className="text-text-muted font-medium text-lg">No devices configured</p>
