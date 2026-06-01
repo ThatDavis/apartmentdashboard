@@ -6,8 +6,10 @@ import { dirname } from 'path';
 
 const dbPath = process.env.DATABASE_URL || './data/app.db';
 
-// Ensure data directory exists
-mkdirSync(dirname(dbPath), { recursive: true });
+// Ensure data directory exists (only for file-based DB)
+if (dbPath !== ':memory:') {
+  mkdirSync(dirname(dbPath), { recursive: true });
+}
 
 const sqlite = new Database(dbPath);
 const db = drizzle(sqlite);
@@ -16,4 +18,6 @@ console.log('Running database migrations...');
 migrate(db, { migrationsFolder: './drizzle' });
 console.log('Migrations complete!');
 
-sqlite.close();
+if (dbPath !== ':memory:') {
+  sqlite.close();
+}

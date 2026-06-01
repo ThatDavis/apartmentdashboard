@@ -4,8 +4,12 @@ import { adminRoutes } from '../src/server/routes/admin.js';
 import { authRoutes } from '../src/server/routes/auth.js';
 import { authMiddleware } from '../src/server/middleware/auth.js';
 import { db } from '../src/server/db/index.js';
-import { users, devices } from '../src/server/db/schema.js';
+import { users, devices, loginAttempts } from '../src/server/db/schema.js';
 import bcrypt from 'bcryptjs';
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+
+// Use in-memory database for tests
+process.env.DATABASE_URL = ':memory:';
 
 // Mock environment variables
 process.env.JWT_SECRET = 'test-secret';
@@ -17,6 +21,9 @@ describe('Admin Routes', () => {
   let userToken: string;
 
   beforeEach(async () => {
+    // Run migrations on the database
+    migrate(db, { migrationsFolder: './drizzle' });
+
     app = fastify();
     
     // Register auth hook
@@ -33,6 +40,7 @@ describe('Admin Routes', () => {
 
     // Clean up database
     await db.delete(devices);
+    await db.delete(loginAttempts);
     await db.delete(users);
 
     // Create admin user
