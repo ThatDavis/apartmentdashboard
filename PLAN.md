@@ -51,7 +51,7 @@
 
 ## Active Feature
 
-*No active feature. Run `/dev:start-feature` to begin.*
+- [ ] Admin user management: delete users and change PINs (Issue #15, branch feature/15-admin-user-management) — In Progress
 
 ## Completed Features
 
