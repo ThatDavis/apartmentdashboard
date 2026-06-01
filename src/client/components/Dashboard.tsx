@@ -14,8 +14,12 @@ import {
   WifiOff,
   Activity,
   Sun,
-  Moon
+  Moon,
+  TrendingUp,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
+import SensorChart from './SensorChart.js';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -34,12 +38,19 @@ interface Device {
   battery: number | null;
 }
 
+interface HistoryPoint {
+  recordedAt: string;
+  value: number;
+}
+
 export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardProps) {
   const [devices, setDevices] = useState<Device[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [greeting, setGreeting] = useState('');
+  const [sensorHistory, setSensorHistory] = useState<Record<number, HistoryPoint[]>>({});
+  const [expandedSensor, setExpandedSensor] = useState<number | null>(null);
 
   const fetchDevices = useCallback(async () => {
     try {
@@ -89,6 +100,28 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
       clearInterval(timeInterval);
     };
   }, [fetchDevices]);
+
+  const fetchSensorHistory = useCallback(async (deviceId: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/devices/${deviceId}/history`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          onLogout();
+          return;
+        }
+        throw new Error('Failed to fetch history');
+      }
+
+      const data = await response.json();
+      setSensorHistory(prev => ({ ...prev, [deviceId]: data }));
+    } catch (err) {
+      console.error('Failed to fetch history:', err);
+    }
+  }, [onLogout]);
 
   const handleToggle = useCallback(async (deviceId: number) => {
     try {
@@ -212,7 +245,22 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
               </div>
               <div className="space-y-3">
                 {sensors.map((device) => (
-                  <SensorCard key={device.id} device={device} />
+                  <SensorCard 
+                    key={device.id} 
+                    device={device} 
+                    history={sensorHistory[device.id] || []}
+                    isExpanded={expandedSensor === device.id}
+                    onToggleExpand={() => {
+                      if (expandedSensor === device.id) {
+                        setExpandedSensor(null);
+                      } else {
+                        setExpandedSensor(device.id);
+                        if (!sensorHistory[device.id]) {
+                          fetchSensorHistory(device.id);
+                        }
+                      }
+                    }}
+                  />
                 ))}
               </div>
             </section>
@@ -292,7 +340,17 @@ function SwitchCard({ device, onToggle }: { device: Device; onToggle: () => void
   );
 }
 
-function SensorCard({ device }: { device: Device }) {
+function SensorCard({ 
+  device, 
+  history, 
+  isExpanded, 
+  onToggleExpand 
+}: { 
+  device: Device; 
+  history: HistoryPoint[];
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+}) {
   const getSensorDisplay = () => {
     if (!device.isOnline) return 'Offline';
     if (device.state === 'unknown') return 'Unknown';
@@ -335,8 +393,28 @@ function SensorCard({ device }: { device: Device }) {
             <BatteryIndicator battery={device.battery} />
           )}
           <span className="text-lg font-semibold text-text">{device.state}</span>
+          <button
+            onClick={onToggleExpand}
+            className="p-1.5 rounded-lg hover:bg-primary/10 text-text-muted hover:text-primary transition-colors"
+            aria-label={isExpanded ? 'Hide chart' : 'Show chart'}
+          >
+            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <TrendingUp className="w-4 h-4" />}
+          </button>
         </div>
       </div>
+
+      {/* History Chart */}
+      {isExpanded && (
+        <div className="mt-4 pt-4 border-t border-border animate-fade-in">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-text-secondary">Last 48 Hours</span>
+            <span className="text-xs text-text-muted">
+              {history.length > 0 ? `${history.length} readings` : 'Loading...'}
+            </span>
+          </div>
+          <SensorChart data={history} color="#FF6700" height={100} />
+        </div>
+      )}
     </div>
   );
 }

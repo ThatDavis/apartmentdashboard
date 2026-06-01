@@ -27,3 +27,10 @@ export const devices = sqliteTable('devices', {
   displayOrder: integer('display_order').default(0),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
+
+export const deviceHistory = sqliteTable('device_history', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  deviceId: integer('device_id').notNull(),
+  state: text('state').notNull(),
+  recordedAt: integer('recorded_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});

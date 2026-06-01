@@ -9,6 +9,7 @@ import { healthRoutes } from './routes/health.js';
 import { deviceRoutes } from './routes/devices.js';
 import { adminRoutes } from './routes/admin.js';
 import { homeAssistantPlugin } from './services/homeAssistant.js';
+import { historyCollector } from './services/historyCollector.js';
 import { authMiddleware, AuthenticatedRequest } from './middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -81,6 +82,9 @@ app.setErrorHandler((error: Error & { statusCode?: number }, _request, reply) =>
 try {
   await app.listen({ port: PORT, host: '0.0.0.0' });
   app.log.info(`Server running on http://localhost:${PORT}`);
+
+  // Start background sensor history collection
+  historyCollector.start();
 } catch (err) {
   app.log.error(err);
   process.exit(1);

@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { db } from '../db/index.js';
-import { devices } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
+import { devices, deviceHistory } from '../db/schema.js';
+import { eq, gte, and } from 'drizzle-orm';
 import { haService } from '../services/homeAssistant.js';
 
 export async function deviceRoutes(fastify: FastifyInstance) {
@@ -96,5 +96,39 @@ export async function deviceRoutes(fastify: FastifyInstance) {
     }
 
     return { success: true, message: 'Toggle command sent' };
+  });
+
+  // Get device history (last 48 hours)
+  fastify.get('/devices/:id/history', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const deviceId = parseInt(id, 10);
+
+    const device = await db
+      .select()
+      .from(devices)
+      .where(eq(devices.id, deviceId))
+      .get();
+
+    if (!device) {
+      return reply.status(404).send({ error: 'Device not found' });
+    }
+
+    const cutoff = new Date();
+    cutoff.setHours(cutoff.getHours() - 48);
+
+    const history = await db
+      .select()
+      .from(deviceHistory)
+      .where(and(
+        eq(deviceHistory.deviceId, deviceId),
+        gte(deviceHistory.recordedAt, cutoff)
+      ))
+      .orderBy(deviceHistory.recordedAt);
+
+    return history.map((h: { state: string; recordedAt: Date | null; id: number; deviceId: number }) => ({
+      ...h,
+      value: parseFloat(h.state),
+      recordedAt: h.recordedAt?.toISOString(),
+    }));
   });
 }
