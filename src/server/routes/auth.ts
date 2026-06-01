@@ -54,7 +54,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     await db.insert(loginAttempts).values({ username, ipAddress: ip, success: true });
 
     const token = jwt.sign(
-      { userId: user.id, username: user.username },
+      { userId: user.id, username: user.username, isAdmin: user.isAdmin },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -75,9 +75,9 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       const token = authHeader.slice(7);
-      const decoded = jwt.verify(token, JWT_SECRET) as { userId: number; username: string };
+      const decoded = jwt.verify(token, JWT_SECRET) as { userId: number; username: string; isAdmin: boolean };
 
-      return { userId: decoded.userId, username: decoded.username };
+      return { userId: decoded.userId, username: decoded.username, isAdmin: decoded.isAdmin };
     } catch {
       return reply.status(401).send({ error: 'Invalid token' });
     }

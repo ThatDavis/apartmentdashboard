@@ -5,12 +5,11 @@ import { eq } from 'drizzle-orm';
 import { haService } from '../services/homeAssistant.js';
 
 export async function deviceRoutes(fastify: FastifyInstance) {
-  // Get all shared devices with their current state
+  // Get all devices with their current state
   fastify.get('/devices', async () => {
     const allDevices = await db
       .select()
       .from(devices)
-      .where(eq(devices.isShared, true))
       .all();
 
     // Fetch current states from Home Assistant

@@ -7,6 +7,7 @@ export interface AuthenticatedRequest extends FastifyRequest {
   user?: {
     userId: number;
     username: string;
+    isAdmin: boolean;
   };
 }
 
@@ -21,11 +22,21 @@ export async function authMiddleware(
     }
 
     const token = authHeader.slice(7);
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: number; username: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: number; username: string; isAdmin: boolean };
 
     request.user = decoded;
   } catch {
     return reply.status(401).send({ error: 'Invalid token' });
+  }
+}
+
+export async function requireAdmin(
+  request: AuthenticatedRequest,
+  reply: FastifyReply
+) {
+  if (!request.user?.isAdmin) {
+    reply.status(403);
+    throw new Error('Admin access required');
   }
 }
 

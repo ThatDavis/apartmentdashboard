@@ -15,6 +15,11 @@ interface HADeviceState {
   last_updated: string;
 }
 
+const ALLOWED_DOMAINS = (process.env.ALLOWED_DOMAINS || 'switch,light,sensor,binary_sensor')
+  .split(',')
+  .map(d => d.trim())
+  .filter(Boolean);
+
 class HomeAssistantService {
   private baseUrl: string;
   private token: string;
@@ -24,6 +29,11 @@ class HomeAssistantService {
     this.baseUrl = HA_URL || '';
     this.token = HA_TOKEN || '';
     this.enabled = !!(this.baseUrl && this.token);
+  }
+
+  isDomainAllowed(entityId: string): boolean {
+    const domain = entityId.split('.')[0];
+    return ALLOWED_DOMAINS.includes(domain);
   }
 
   private async request(endpoint: string, options: RequestInit = {}): Promise<unknown> {
@@ -82,6 +92,11 @@ class HomeAssistantService {
   }
 
   async toggleSwitch(entityId: string): Promise<boolean> {
+    if (!this.isDomainAllowed(entityId)) {
+      console.error(`Domain not allowed for entity: ${entityId}`);
+      return false;
+    }
+
     try {
       await this.request('/services/homeassistant/toggle', {
         method: 'POST',
@@ -90,19 +105,6 @@ class HomeAssistantService {
       return true;
     } catch (error) {
       console.error('Failed to toggle switch:', error);
-      return false;
-    }
-  }
-
-  async callService(domain: string, service: string, entityId: string): Promise<boolean> {
-    try {
-      await this.request(`/services/${domain}/${service}`, {
-        method: 'POST',
-        body: JSON.stringify({ entity_id: entityId }),
-      });
-      return true;
-    } catch (error) {
-      console.error(`Failed to call service ${domain}.${service}:`, error);
       return false;
     }
   }

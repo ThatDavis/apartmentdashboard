@@ -6,8 +6,10 @@ import { dirname } from 'path';
 
 const dbPath = process.env.DATABASE_URL || './data/app.db';
 
-// Ensure the data directory exists
-mkdirSync(dirname(dbPath), { recursive: true });
+// Ensure the data directory exists (only for file-based DB)
+if (dbPath !== ':memory:') {
+  mkdirSync(dirname(dbPath), { recursive: true });
+}
 
 const sqlite = new Database(dbPath);
 sqlite.pragma('journal_mode = WAL');

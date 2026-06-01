@@ -6,6 +6,10 @@ import { registerAuthMiddleware } from '../src/server/middleware/auth.js';
 import { db } from '../src/server/db/index.js';
 import { users, loginAttempts } from '../src/server/db/schema.js';
 import bcrypt from 'bcryptjs';
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+
+// Use in-memory database for tests
+process.env.DATABASE_URL = ':memory:';
 
 // Mock environment variables
 process.env.JWT_SECRET = 'test-secret';
@@ -16,6 +20,9 @@ describe('Authentication', () => {
   let app: ReturnType<typeof fastify>;
 
   beforeEach(async () => {
+    // Run migrations on the database
+    migrate(db, { migrationsFolder: './drizzle' });
+
     app = fastify();
     await app.register(registerAuthMiddleware);
     await app.register(authRoutes, { prefix: '/api' });
