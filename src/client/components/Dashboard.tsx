@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { 
+import {
   Lightbulb, 
   Zap, 
   Thermometer, 
@@ -17,9 +17,11 @@ import {
   Moon,
   TrendingUp,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  CalendarDays
 } from 'lucide-react';
 import SensorChart from './SensorChart.js';
+import ScheduleEditor from './ScheduleEditor.js';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -51,6 +53,7 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
   const [greeting, setGreeting] = useState('');
   const [sensorHistory, setSensorHistory] = useState<Record<number, HistoryPoint[]>>({});
   const [expandedSensor, setExpandedSensor] = useState<number | null>(null);
+  const [scheduleEditorDevice, setScheduleEditorDevice] = useState<Device | null>(null);
 
   const fetchDevices = useCallback(async () => {
     try {
@@ -227,7 +230,8 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
                   <SwitchCard 
                     key={device.id} 
                     device={device} 
-                    onToggle={() => handleToggle(device.id)} 
+                    onToggle={() => handleToggle(device.id)}
+                    onSchedule={() => setScheduleEditorDevice(device)}
                   />
                 ))}
               </div>
@@ -285,36 +289,60 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
           )}
         </main>
       </div>
+
+      {/* Schedule Editor Modal */}
+      {scheduleEditorDevice && (
+        <ScheduleEditor
+          deviceId={scheduleEditorDevice.id}
+          deviceName={scheduleEditorDevice.name}
+          onClose={() => setScheduleEditorDevice(null)}
+          onSave={() => {
+            // Refresh devices to show any schedule indicators
+            fetchDevices();
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function SwitchCard({ device, onToggle }: { device: Device; onToggle: () => void }) {
+function SwitchCard({ device, onToggle, onSchedule }: { device: Device; onToggle: () => void; onSchedule: () => void }) {
   const isOn = device.state === 'on';
   
   return (
     <div 
-      className={`glass-card rounded-2xl p-4 cursor-pointer transition-all duration-200 active:scale-95 ${
+      className={`glass-card rounded-2xl p-4 transition-all duration-200 ${
         isOn ? 'bg-primary/15 border-primary/30' : ''
       } ${!device.isOnline ? 'opacity-40' : ''}`}
-      onClick={device.isOnline ? onToggle : undefined}
     >
       <div className="flex flex-col h-full">
         <div className="flex items-start justify-between mb-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-            isOn 
-              ? 'bg-primary/30 text-primary-light' 
-              : 'bg-text-muted/10 text-text-muted'
-          }`}>
+          <div 
+            className={`w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer active:scale-95 ${
+              isOn 
+                ? 'bg-primary/30 text-primary-light' 
+                : 'bg-text-muted/10 text-text-muted'
+            }`}
+            onClick={device.isOnline ? onToggle : undefined}
+          >
             <Lightbulb className="w-5 h-5" />
           </div>
           
-          {device.battery !== null && device.isOnline && (
-            <BatteryIndicator battery={device.battery} />
-          )}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onSchedule}
+              className="p-2 rounded-lg hover:bg-primary/10 text-text-muted hover:text-primary transition-colors"
+              aria-label={`Schedule ${device.name}`}
+            >
+              <CalendarDays className="w-4 h-4" />
+            </button>
+            {device.battery !== null && device.isOnline && (
+              <BatteryIndicator battery={device.battery} />
+            )}
+          </div>
         </div>
 
-        <div className="mt-auto">
+        <div className="mt-auto cursor-pointer" onClick={device.isOnline ? onToggle : undefined}>
           <h3 className="font-medium text-text text-sm truncate">{device.name}</h3>
           <p className={`text-xs mt-1 font-medium ${
             device.isOnline 

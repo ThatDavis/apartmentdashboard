@@ -1,22 +1,11 @@
 import { db } from '../db/index.js';
 import { schedules, devices, twilightCache } from '../db/schema.js';
-import { eq, and, gte, lte } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { haService } from './homeAssistant.js';
 import { twilightService, TwilightData } from './twilightService.js';
 
 const CHECK_INTERVAL_MS = 60 * 1000; // 1 minute
 const TIMEZONE = 'America/Chicago';
-
-interface ScheduleWithDevice {
-  id: number;
-  deviceId: number;
-  userId: number;
-  startTime: string;
-  endTime: string;
-  daysOfWeek: string;
-  enabled: boolean;
-  haEntityId: string;
-}
 
 class ScheduleExecutor {
   private timer: NodeJS.Timeout | null = null;

@@ -39,7 +39,6 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
     const deviceId = parseInt(id, 10);
     const userId = request.user!.userId;
     
-    // Verify device exists
     const device = await db
       .select()
       .from(devices)
@@ -63,11 +62,11 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
   });
 
   // Create a schedule
-  fastify.post<{ Body: CreateScheduleBody }>('/schedules', async (request: AuthenticatedRequest, reply) => {
+  fastify.post('/schedules', async (request: AuthenticatedRequest, reply) => {
     const userId = request.user!.userId;
-    const { deviceId, startTime, endTime, daysOfWeek } = request.body;
+    const body = request.body as CreateScheduleBody;
+    const { deviceId, startTime, endTime, daysOfWeek } = body;
     
-    // Validate device exists and is a switch
     const device = await db
       .select()
       .from(devices)
@@ -82,15 +81,13 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
       return reply.status(400).send({ error: 'Schedules can only be created for switches' });
     }
     
-    // Validate time format (HH:MM)
     const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
     if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
       return reply.status(400).send({ error: 'Times must be in HH:MM format' });
     }
     
-    // Validate days of week
     const days = daysOfWeek || [1, 2, 3, 4, 5, 6, 7];
-    if (!days.every(d => d >= 1 && d <= 7)) {
+    if (!days.every((d: number) => d >= 1 && d <= 7)) {
       return reply.status(400).send({ error: 'Days must be 1-7 (Mon-Sun)' });
     }
     
@@ -106,13 +103,12 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
   });
 
   // Update a schedule
-  fastify.patch<{ Body: UpdateScheduleBody }>('/schedules/:id', async (request: AuthenticatedRequest, reply) => {
+  fastify.patch('/schedules/:id', async (request: AuthenticatedRequest, reply) => {
     const { id } = request.params as { id: string };
     const scheduleId = parseInt(id, 10);
     const userId = request.user!.userId;
-    const updates = request.body;
+    const updates = request.body as UpdateScheduleBody;
     
-    // Verify schedule exists and belongs to user
     const schedule = await db
       .select()
       .from(schedules)
@@ -126,10 +122,10 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: 'Schedule not found' });
     }
     
-    const updateData: Partial<typesof schedules.$inferInsert> = {};
+    const updateData: Partial<typeof schedules.$inferInsert> = {};
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
     
     if (updates.startTime !== undefined) {
-      const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
       if (!timeRegex.test(updates.startTime)) {
         return reply.status(400).send({ error: 'Start time must be in HH:MM format' });
       }
@@ -137,7 +133,6 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
     }
     
     if (updates.endTime !== undefined) {
-      const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
       if (!timeRegex.test(updates.endTime)) {
         return reply.status(400).send({ error: 'End time must be in HH:MM format' });
       }
@@ -145,7 +140,7 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
     }
     
     if (updates.daysOfWeek !== undefined) {
-      if (!updates.daysOfWeek.every(d => d >= 1 && d <= 7)) {
+      if (!updates.daysOfWeek.every((d: number) => d >= 1 && d <= 7)) {
         return reply.status(400).send({ error: 'Days must be 1-7 (Mon-Sun)' });
       }
       updateData.daysOfWeek = updates.daysOfWeek.join(',');
@@ -169,7 +164,6 @@ export async function scheduleRoutes(fastify: FastifyInstance) {
     const scheduleId = parseInt(id, 10);
     const userId = request.user!.userId;
     
-    // Verify schedule exists and belongs to user
     const schedule = await db
       .select()
       .from(schedules)
