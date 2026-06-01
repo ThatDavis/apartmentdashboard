@@ -105,7 +105,48 @@ apartment-dashboard/
 
 ## Deployment
 
-### Using Docker Compose
+### Using Docker Compose (Pre-built Image)
+
+Create a `docker-compose.yml` file that pulls the image from GitHub Container Registry:
+
+```yaml
+services:
+  app:
+    image: ghcr.io/ThatDavis/apartmentdashboard:latest
+    container_name: apartment-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=./data/app.db
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - HA_URL=${HA_URL:?HA_URL is required}
+      - HA_TOKEN=${HA_TOKEN:?HA_TOKEN is required}
+    volumes:
+      - ./data:/app/data
+```
+
+Run it:
+
+```bash
+# Create data directory
+mkdir -p data
+
+# Set required environment variables
+export JWT_SECRET="your-secure-secret-key"
+export HA_URL="http://your-ha-instance:8123"
+export HA_TOKEN="your_long_lived_token_here"
+
+# Pull and start
+docker compose pull
+docker compose up -d
+```
+
+### Using Docker Compose (Build Locally)
+
+If you prefer to build from source:
 
 ```bash
 # Pull the latest image
