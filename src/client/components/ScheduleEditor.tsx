@@ -252,36 +252,46 @@ export default function ScheduleEditor({ deviceId, deviceName, onClose, onSave }
                 </div>
               ))}
 
-              {/* Night zone with gradient */}
+              {/* Night after dusk - solid dark */}
               <div
                 className="absolute top-0 bottom-0"
                 style={{
                   left: `${(timeToMinutes(twilight?.dusk || '18:00') / 1440) * 100}%`,
-                  width: `${((timeToMinutes(twilight?.dawn || '06:00') + 1440 - timeToMinutes(twilight?.dusk || '18:00')) / 1440) * 100}%`,
-                  background: 'linear-gradient(90deg, rgba(30, 58, 138, 0.4) 0%, rgba(15, 23, 42, 0.6) 50%, rgba(30, 58, 138, 0.4) 100%)',
+                  width: `${((1440 - timeToMinutes(twilight?.dusk || '18:00')) / 1440) * 100}%`,
+                  background: 'rgba(15, 23, 42, 0.5)',
                 }}
               />
 
-              {/* Dawn gradient: twilight blue to light blue */}
+              {/* Night before dawn - solid dark */}
+              <div
+                className="absolute top-0 bottom-0"
+                style={{
+                  left: '0%',
+                  width: `${(timeToMinutes(twilight?.dawn || '06:00') / 1440) * 100}%`,
+                  background: 'rgba(15, 23, 42, 0.5)',
+                }}
+              />
+
+              {/* Dawn gradient: dark blue to light blue */}
               {twilight && (
                 <div
                   className="absolute top-0 bottom-0"
                   style={{
                     left: `${(timeToMinutes(twilight.dawn) / 1440) * 100}%`,
                     width: `${((timeToMinutes(twilight.sunrise) - timeToMinutes(twilight.dawn)) / 1440) * 100}%`,
-                    background: 'linear-gradient(90deg, rgba(30, 58, 138, 0.5) 0%, rgba(96, 165, 250, 0.3) 100%)',
+                    background: 'linear-gradient(90deg, rgba(30, 58, 138, 0.6) 0%, rgba(96, 165, 250, 0.2) 100%)',
                   }}
                 />
               )}
 
-              {/* Dusk gradient: light blue to dark twilight blue */}
+              {/* Dusk gradient: light blue to dark blue */}
               {twilight && (
                 <div
                   className="absolute top-0 bottom-0"
                   style={{
                     left: `${(timeToMinutes(twilight.sunset) / 1440) * 100}%`,
                     width: `${((timeToMinutes(twilight.dusk) - timeToMinutes(twilight.sunset)) / 1440) * 100}%`,
-                    background: 'linear-gradient(90deg, rgba(96, 165, 250, 0.3) 0%, rgba(30, 58, 138, 0.5) 100%)',
+                    background: 'linear-gradient(90deg, rgba(96, 165, 250, 0.2) 0%, rgba(30, 58, 138, 0.6) 100%)',
                   }}
                 />
               )}
@@ -293,7 +303,7 @@ export default function ScheduleEditor({ deviceId, deviceName, onClose, onSave }
                   style={{
                     left: `${(timeToMinutes(twilight.sunrise) / 1440) * 100}%`,
                     width: `${((timeToMinutes(twilight.sunset) - timeToMinutes(twilight.sunrise)) / 1440) * 100}%`,
-                    background: 'linear-gradient(180deg, rgba(251, 191, 36, 0.1) 0%, transparent 100%)',
+                    background: 'linear-gradient(180deg, rgba(251, 191, 36, 0.08) 0%, transparent 100%)',
                   }}
                 />
               )}
