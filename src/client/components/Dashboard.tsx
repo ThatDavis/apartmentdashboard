@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import SensorChart from './SensorChart.js';
 import ScheduleEditor from './ScheduleEditor.js';
+import { useTheme } from '../hooks/useTheme.js';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -189,6 +190,7 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
               </div>
               
               <div className="flex items-center gap-2">
+                <ThemeToggle />
                 {isAdmin && onShowAdmin && (
                   <button
                     onClick={onShowAdmin}
@@ -303,6 +305,29 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
         />
       )}
     </div>
+  );
+}
+
+function ThemeToggle() {
+  const { mode, isLight, toggleMode, isManual } = useTheme();
+
+  return (
+    <button
+      onClick={toggleMode}
+      className={`p-2.5 rounded-xl glass-button transition-all ${
+        isManual ? 'ring-2 ring-primary/30' : ''
+      }`}
+      title={`Theme: ${mode} (click to cycle)`}
+    >
+      {isLight ? (
+        <Sun className="w-5 h-5 text-warning" />
+      ) : (
+        <Moon className="w-5 h-5 text-secondary-light" />
+      )}
+      {isManual && (
+        <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
+      )}
+    </button>
   );
 }
 

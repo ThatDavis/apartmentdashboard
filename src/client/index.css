@@ -32,6 +32,36 @@
   --color-glass-highlight: #FFFFFF;
 }
 
+/* Dynamic Theme Colors based on twilight */
+@property --theme-progress {
+  syntax: '<number>';
+  initial-value: 1;
+  inherits: true;
+}
+
+:root {
+  --theme-progress: 1;
+  --bg-light: #FFFFFF;
+  --bg-dark: #0F172A;
+  --surface-light: #F8FAFC;
+  --surface-dark: rgba(30, 41, 59, 0.7);
+  --text-light: #1E293B;
+  --text-dark: #F8FAFC;
+  --text-secondary-light: #475569;
+  --text-secondary-dark: #CBD5E1;
+  --text-muted-light: #64748B;
+  --text-muted-dark: #94A3B8;
+  --border-light: rgba(0, 0, 0, 0.1);
+  --border-dark: rgba(255, 255, 255, 0.1);
+  --primary-light: #FF6700;
+  --primary-dark: #FF8533;
+}
+
+/* Smooth transition for theme changes */
+body, .glass-card, .glass-button, .glass-input {
+  transition: background-color 2s ease, color 2s ease, border-color 2s ease;
+}
+
 /* Base Styles */
 html, body, #root {
   min-height: 100vh;
@@ -40,8 +70,8 @@ html, body, #root {
 }
 
 body {
-  background-color: var(--color-background);
-  color: var(--color-text);
+  background-color: color-mix(in oklab, var(--bg-dark) calc((1 - var(--theme-progress)) * 100%), var(--bg-light) calc(var(--theme-progress) * 100%));
+  color: color-mix(in oklab, var(--text-dark) calc((1 - var(--theme-progress)) * 100%), var(--text-light) calc(var(--theme-progress) * 100%));
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -70,12 +100,12 @@ body {
 .glass-card {
   background: linear-gradient(
     135deg,
-    #F8FAFC 0%,
-    #F1F5F9 100%
+    color-mix(in oklab, rgba(30, 41, 59, 0.8) calc((1 - var(--theme-progress)) * 100%), #F8FAFC calc(var(--theme-progress) * 100%)) 0%,
+    color-mix(in oklab, rgba(15, 23, 42, 0.9) calc((1 - var(--theme-progress)) * 100%), #F1F5F9 calc(var(--theme-progress) * 100%)) 100%
   );
   backdrop-filter: blur(20px) saturate(150%);
   -webkit-backdrop-filter: blur(20px) saturate(150%);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid color-mix(in oklab, rgba(255, 255, 255, 0.1) calc((1 - var(--theme-progress)) * 100%), rgba(0, 0, 0, 0.08) calc(var(--theme-progress) * 100%));
   box-shadow: 
     0 4px 6px -1px rgba(0, 0, 0, 0.05),
     0 2px 4px -1px rgba(0, 0, 0, 0.03);
@@ -85,10 +115,10 @@ body {
 .glass-card:hover {
   background: linear-gradient(
     135deg,
-    #FFFFFF 0%,
-    #F8FAFC 100%
+    color-mix(in oklab, rgba(30, 41, 59, 0.9) calc((1 - var(--theme-progress)) * 100%), #FFFFFF calc(var(--theme-progress) * 100%)) 0%,
+    color-mix(in oklab, rgba(15, 23, 42, 0.95) calc((1 - var(--theme-progress)) * 100%), #F8FAFC calc(var(--theme-progress) * 100%)) 100%
   );
-  border-color: rgba(0, 0, 0, 0.12);
+  border-color: color-mix(in oklab, rgba(255, 255, 255, 0.15) calc((1 - var(--theme-progress)) * 100%), rgba(0, 0, 0, 0.12) calc(var(--theme-progress) * 100%));
   box-shadow: 
     0 10px 15px -3px rgba(0, 0, 0, 0.08),
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -97,18 +127,18 @@ body {
 
 /* Glass Button */
 .glass-button {
-  background: #F1F5F9;
+  background: color-mix(in oklab, rgba(30, 41, 59, 0.7) calc((1 - var(--theme-progress)) * 100%), #F1F5F9 calc(var(--theme-progress) * 100%));
   backdrop-filter: blur(12px) saturate(150%);
   -webkit-backdrop-filter: blur(12px) saturate(150%);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid color-mix(in oklab, rgba(255, 255, 255, 0.1) calc((1 - var(--theme-progress)) * 100%), rgba(0, 0, 0, 0.1) calc(var(--theme-progress) * 100%));
   box-shadow: 
     0 2px 4px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
 }
 
 .glass-button:hover {
-  background: #E2E8F0;
-  border-color: rgba(0, 0, 0, 0.15);
+  background: color-mix(in oklab, rgba(30, 41, 59, 0.85) calc((1 - var(--theme-progress)) * 100%), #E2E8F0 calc(var(--theme-progress) * 100%));
+  border-color: color-mix(in oklab, rgba(255, 255, 255, 0.2) calc((1 - var(--theme-progress)) * 100%), rgba(0, 0, 0, 0.15) calc(var(--theme-progress) * 100%));
   box-shadow: 
     0 4px 8px rgba(0, 0, 0, 0.08);
 }
@@ -137,15 +167,15 @@ body {
 
 /* Glass Input */
 .glass-input {
-  background: #F8FAFC;
+  background: color-mix(in oklab, rgba(30, 41, 59, 0.6) calc((1 - var(--theme-progress)) * 100%), #F8FAFC calc(var(--theme-progress) * 100%));
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid color-mix(in oklab, rgba(255, 255, 255, 0.1) calc((1 - var(--theme-progress)) * 100%), rgba(0, 0, 0, 0.1) calc(var(--theme-progress) * 100%));
   transition: all 0.2s ease;
 }
 
 .glass-input:focus {
-  background: #FFFFFF;
+  background: color-mix(in oklab, rgba(30, 41, 59, 0.8) calc((1 - var(--theme-progress)) * 100%), #FFFFFF calc(var(--theme-progress) * 100%));
   border-color: rgba(255, 103, 0, 0.5);
   box-shadow: 0 0 0 3px rgba(255, 103, 0, 0.15);
   outline: none;
