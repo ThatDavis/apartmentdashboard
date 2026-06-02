@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Lightbulb, 
-  Zap, 
-  Thermometer, 
-  Droplets, 
-  Battery, 
-  BatteryWarning, 
+  Lightbulb,
+  Zap,
+  Thermometer,
+  Droplets,
+  Battery,
+  BatteryWarning,
   BatteryLow,
   Power,
   Settings,
@@ -13,6 +13,7 @@ import {
   Wifi,
   WifiOff,
   Activity,
+  X,
   Sun,
   Moon,
   RefreshCw,
@@ -50,6 +51,46 @@ interface Device {
 interface HistoryPoint {
   recordedAt: string;
   value: number;
+}
+
+function IOSInstallTip() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone =
+      ('standalone' in navigator && (navigator as unknown as { standalone: boolean }).standalone) ||
+      window.matchMedia('(display-mode: standalone)').matches;
+    const dismissed = localStorage.getItem('ios-install-tip-dismissed');
+    if (isIOS && !isStandalone && !dismissed) setVisible(true);
+  }, []);
+
+  if (!visible) return null;
+
+  const dismiss = () => {
+    localStorage.setItem('ios-install-tip-dismissed', '1');
+    setVisible(false);
+  };
+
+  return (
+    <div className="fixed bottom-4 left-4 right-4 z-50 animate-fade-in">
+      <div className="glass-card rounded-2xl px-4 py-3 flex items-center gap-3 shadow-lg">
+        {/* iOS share icon */}
+        <svg className="w-6 h-6 flex-shrink-0 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+          <polyline points="16 6 12 2 8 6" />
+          <line x1="12" y1="2" x2="12" y2="15" />
+        </svg>
+        <p className="text-xs text-text-secondary flex-1">
+          Tap <span className="font-semibold text-text">Share</span> then{' '}
+          <span className="font-semibold text-text">"Add to Home Screen"</span> to install this app.
+        </p>
+        <button onClick={dismiss} className="text-text-muted hover:text-text flex-shrink-0">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardProps) {
@@ -165,6 +206,7 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
 
   return (
     <div className="min-h-screen pb-8 relative">
+      <IOSInstallTip />
       {/* Ambient background elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/15 rounded-full blur-[128px]" />
