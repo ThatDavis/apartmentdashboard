@@ -2,7 +2,7 @@
 
 @theme {
   /* Core Colors */
-  --color-primary: #FF6700;
+  --color-primary: var(--primary-color, #FF6700);
   --color-primary-light: #FF8533;
   --color-primary-dark: #E55A00;
 
@@ -10,16 +10,16 @@
   --color-secondary-light: #5B8DBF;
   --color-secondary-dark: #004E98;
 
-  --color-background: #FFFFFF;
-  --color-surface: #F8FAFC;
-  --color-surface-hover: #F1F5F9;
+  --color-background: var(--bg-color, #FFFFFF);
+  --color-surface: var(--surface-color, #F8FAFC);
+  --color-surface-hover: var(--surface-hover-color, #F1F5F9);
 
-  --color-border: rgba(0, 0, 0, 0.1);
-  --color-border-hover: rgba(0, 0, 0, 0.2);
+  --color-border: var(--border-color, rgba(0, 0, 0, 0.1));
+  --color-border-hover: var(--border-hover-color, rgba(0, 0, 0, 0.2));
 
-  --color-text: #1E293B;
-  --color-text-secondary: #475569;
-  --color-text-muted: #64748B;
+  --color-text: var(--text-color, #1E293B);
+  --color-text-secondary: var(--text-secondary-color, #475569);
+  --color-text-muted: var(--text-muted-color, #64748B);
 
   --color-success: #059669;
   --color-warning: #D97706;
