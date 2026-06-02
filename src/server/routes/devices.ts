@@ -3,6 +3,7 @@ import { db } from '../db/index.js';
 import { devices, deviceHistory } from '../db/schema.js';
 import { eq, gte, and } from 'drizzle-orm';
 import { haService } from '../services/homeAssistant.js';
+import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 export async function deviceRoutes(fastify: FastifyInstance) {
   // Get all devices with their current state
@@ -130,5 +131,28 @@ export async function deviceRoutes(fastify: FastifyInstance) {
       value: parseFloat(h.state),
       recordedAt: h.recordedAt?.toISOString(),
     }));
+  });
+
+  fastify.put('/devices/:id/threshold', async (request: AuthenticatedRequest, reply) => {
+    const { id } = request.params as { id: string };
+    const { min, max, enabled } = request.body as {
+      min?: number | null;
+      max?: number | null;
+      enabled?: boolean;
+    };
+
+    const device = await db.select().from(devices).where(eq(devices.id, parseInt(id, 10))).get();
+    if (!device) return reply.status(404).send({ error: 'Device not found' });
+
+    await db
+      .update(devices)
+      .set({
+        thresholdMin: min ?? null,
+        thresholdMax: max ?? null,
+        thresholdEnabled: enabled ?? false,
+      })
+      .where(eq(devices.id, parseInt(id, 10)));
+
+    return { success: true };
   });
 }

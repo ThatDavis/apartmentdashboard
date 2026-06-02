@@ -2,19 +2,22 @@ import { db } from '../db/index.js';
 import { devices, deviceHistory } from '../db/schema.js';
 import { haService } from './homeAssistant.js';
 import { lt } from 'drizzle-orm';
+import { sendPushToAll } from '../routes/push.js';
 
 const RECORD_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const RETENTION_DAYS = 7;
 
+type ThresholdState = 'normal' | 'above_max' | 'below_min';
+
 class HistoryCollector {
   private timer: NodeJS.Timeout | null = null;
   private isRunning = false;
+  private thresholdState = new Map<number, ThresholdState>();
 
   start() {
     if (this.isRunning) return;
     this.isRunning = true;
 
-    // Record immediately, then on interval
     this.recordAllSensors();
     this.timer = setInterval(() => this.recordAllSensors(), RECORD_INTERVAL_MS);
 
@@ -45,7 +48,6 @@ class HistoryCollector {
           continue;
         }
 
-        // Only record numeric values (skip "on"/"off" for sensors)
         const numericValue = parseFloat(haState.state);
         if (isNaN(numericValue)) continue;
 
@@ -54,13 +56,44 @@ class HistoryCollector {
           state: haState.state,
           recordedAt: now,
         });
+
+        await this.checkThreshold(device, numericValue);
       }
 
-      // Clean up old records
       await this.cleanupOldRecords();
     } catch (error) {
       console.error('[HistoryCollector] Failed to record sensors:', error);
     }
+  }
+
+  private async checkThreshold(
+    device: typeof devices.$inferSelect,
+    value: number
+  ) {
+    if (!device.thresholdEnabled) return;
+
+    const { thresholdMin, thresholdMax, name } = device;
+    let current: ThresholdState = 'normal';
+
+    if (thresholdMin !== null && value < thresholdMin) {
+      current = 'below_min';
+    } else if (thresholdMax !== null && value > thresholdMax) {
+      current = 'above_max';
+    }
+
+    const previous = this.thresholdState.get(device.id) ?? 'normal';
+
+    if (current !== 'normal' && current !== previous) {
+      const unit = (device as unknown as { attributes?: { unit_of_measurement?: string } })?.attributes?.unit_of_measurement ?? '';
+      const direction = current === 'below_min' ? 'below' : 'above';
+      const limit = current === 'below_min' ? thresholdMin : thresholdMax;
+      await sendPushToAll(
+        `${name} Alert`,
+        `${name} is ${direction} threshold: ${value}${unit} (limit: ${limit}${unit})`
+      );
+    }
+
+    this.thresholdState.set(device.id, current);
   }
 
   private async cleanupOldRecords() {

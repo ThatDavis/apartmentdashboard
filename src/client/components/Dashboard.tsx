@@ -19,7 +19,9 @@ import {
   TrendingUp,
   ChevronDown,
   ChevronUp,
-  CalendarDays
+  CalendarDays,
+  Bell,
+  BellOff
 } from 'lucide-react';
 import SensorChart from './SensorChart.js';
 import ScheduleEditor from './ScheduleEditor.js';
@@ -40,6 +42,9 @@ interface Device {
   lastUpdated: string | null;
   isOnline: boolean;
   battery: number | null;
+  thresholdMin: number | null;
+  thresholdMax: number | null;
+  thresholdEnabled: boolean;
 }
 
 interface HistoryPoint {
@@ -192,6 +197,7 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
               
               <div className="flex items-center gap-2">
                 <ThemeToggle />
+                <NotificationButton />
                 {isAdmin && onShowAdmin && (
                   <button
                     onClick={onShowAdmin}
@@ -252,9 +258,9 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
               </div>
               <div className="space-y-3">
                 {sensors.map((device) => (
-                  <SensorCard 
-                    key={device.id} 
-                    device={device} 
+                  <SensorCard
+                    key={device.id}
+                    device={device}
                     history={sensorHistory[device.id] || []}
                     isExpanded={expandedSensor === device.id}
                     onToggleExpand={() => {
@@ -267,6 +273,7 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
                         }
                       }
                     }}
+                    onRefresh={fetchDevices}
                   />
                 ))}
               </div>
@@ -321,6 +328,82 @@ function ThemeToggle() {
       {mode === 'light' && <Sun className="w-5 h-5 text-warning" />}
       {mode === 'dark' && <Moon className="w-5 h-5 text-secondary-light" />}
       {mode === 'auto' && <RefreshCw className="w-5 h-5 text-text-secondary" />}
+    </button>
+  );
+}
+
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from({ length: rawData.length }, (_, i) => rawData.charCodeAt(i));
+}
+
+function NotificationButton() {
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const isSupported =
+    typeof Notification !== 'undefined' &&
+    'serviceWorker' in navigator &&
+    'PushManager' in window;
+
+  useEffect(() => {
+    if (!isSupported) return;
+    navigator.serviceWorker.ready.then(reg =>
+      reg.pushManager.getSubscription().then(sub => setIsSubscribed(!!sub))
+    );
+  }, [isSupported]);
+
+  const toggle = async () => {
+    if (!isSupported) return;
+    const token = localStorage.getItem('token');
+
+    if (isSubscribed) {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await sub.unsubscribe();
+        await fetch('/api/push/unsubscribe', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ endpoint: sub.endpoint }),
+        });
+      }
+      setIsSubscribed(false);
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+
+    const res = await fetch('/api/push/vapid-public-key', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const { publicKey } = await res.json();
+    if (!publicKey) return;
+
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    });
+
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(sub.toJSON()),
+    });
+    setIsSubscribed(true);
+  };
+
+  if (!isSupported) return null;
+
+  return (
+    <button
+      onClick={toggle}
+      className={`p-2.5 rounded-xl glass-button transition-all ${isSubscribed ? 'text-primary' : 'text-text-secondary hover:text-text'}`}
+      title={isSubscribed ? 'Notifications enabled (click to disable)' : 'Enable notifications'}
+    >
+      {isSubscribed ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
     </button>
   );
 }
@@ -387,27 +470,30 @@ function SwitchCard({ device, onToggle, onSchedule }: { device: Device; onToggle
   );
 }
 
-function SensorCard({ 
-  device, 
-  history, 
-  isExpanded, 
-  onToggleExpand 
-}: { 
-  device: Device; 
+function SensorCard({
+  device,
+  history,
+  isExpanded,
+  onToggleExpand,
+  onRefresh,
+}: {
+  device: Device;
   history: HistoryPoint[];
   isExpanded: boolean;
   onToggleExpand: () => void;
+  onRefresh: () => void;
 }) {
+  const [showThreshold, setShowThreshold] = useState(false);
+  const [minInput, setMinInput] = useState(device.thresholdMin != null ? String(device.thresholdMin) : '');
+  const [maxInput, setMaxInput] = useState(device.thresholdMax != null ? String(device.thresholdMax) : '');
+  const [saving, setSaving] = useState(false);
+
+  const unit = (device.attributes?.unit_of_measurement as string) ?? '';
+
   const getSensorDisplay = () => {
     if (!device.isOnline) return 'Offline';
     if (device.state === 'unknown') return 'Unknown';
-    
-    const unit = device.attributes?.unit_of_measurement;
-    if (unit) {
-      return `${device.state} ${unit}`;
-    }
-    
-    return device.state;
+    return unit ? `${device.state} ${unit}` : device.state;
   };
 
   const getSensorIcon = () => {
@@ -417,7 +503,28 @@ function SensorCard({
     return Activity;
   };
 
+  const saveThreshold = async () => {
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`/api/devices/${device.id}/threshold`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          min: minInput !== '' ? parseFloat(minInput) : null,
+          max: maxInput !== '' ? parseFloat(maxInput) : null,
+          enabled: minInput !== '' || maxInput !== '',
+        }),
+      });
+      setShowThreshold(false);
+      onRefresh();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const Icon = getSensorIcon();
+  const hasThreshold = device.thresholdEnabled && (device.thresholdMin != null || device.thresholdMax != null);
 
   return (
     <div className={`glass-card rounded-2xl p-4 ${!device.isOnline ? 'opacity-40' : ''}`}>
@@ -428,18 +535,33 @@ function SensorCard({
           }`}>
             <Icon className="w-5 h-5" />
           </div>
-          
+
           <div className="min-w-0">
             <h3 className="font-medium text-text text-sm truncate">{device.name}</h3>
             <p className="text-xs text-text-muted mt-0.5">{getSensorDisplay()}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-1 flex-shrink-0">
           {device.battery !== null && device.isOnline && (
             <BatteryIndicator battery={device.battery} />
           )}
-          <span className="text-lg font-semibold text-text">{device.state}</span>
+          <span className="text-lg font-semibold text-text mr-1">{device.state}</span>
+          <button
+            onClick={() => {
+              setMinInput(device.thresholdMin != null ? String(device.thresholdMin) : '');
+              setMaxInput(device.thresholdMax != null ? String(device.thresholdMax) : '');
+              setShowThreshold(v => !v);
+            }}
+            className={`p-1.5 rounded-lg transition-colors ${
+              hasThreshold
+                ? 'text-primary hover:bg-primary/10'
+                : 'text-text-muted hover:bg-primary/10 hover:text-primary'
+            }`}
+            aria-label="Alert thresholds"
+          >
+            <Bell className="w-4 h-4" />
+          </button>
           <button
             onClick={onToggleExpand}
             className="p-1.5 rounded-lg hover:bg-primary/10 text-text-muted hover:text-primary transition-colors"
@@ -449,6 +571,49 @@ function SensorCard({
           </button>
         </div>
       </div>
+
+      {/* Threshold editor */}
+      {showThreshold && (
+        <div className="mt-3 pt-3 border-t border-border animate-fade-in">
+          <p className="text-xs font-medium text-text-secondary mb-2">
+            Alert thresholds{unit ? ` (${unit})` : ''}
+          </p>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className="text-xs text-text-muted">Below</label>
+              <input
+                type="number"
+                value={minInput}
+                onChange={e => setMinInput(e.target.value)}
+                placeholder="—"
+                className="w-full mt-1 glass-input rounded-lg px-2 py-1.5 text-sm text-text"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-xs text-text-muted">Above</label>
+              <input
+                type="number"
+                value={maxInput}
+                onChange={e => setMaxInput(e.target.value)}
+                placeholder="—"
+                className="w-full mt-1 glass-input rounded-lg px-2 py-1.5 text-sm text-text"
+              />
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={saveThreshold}
+                disabled={saving}
+                className="glass-button-primary rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+          {hasThreshold && (
+            <p className="text-xs text-success mt-2">Alerts active</p>
+          )}
+        </div>
+      )}
 
       {/* History Chart */}
       {isExpanded && (

@@ -29,6 +29,13 @@
       "when": 1780281689929,
       "tag": "0003_early_lady_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1780441880465,
+      "tag": "0004_spooky_nick_fury",
+      "breakpoints": true
     }
   ]
 }
