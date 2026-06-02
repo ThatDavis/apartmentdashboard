@@ -396,7 +396,6 @@ function NotificationButton() {
   }, [isSupported]);
 
   const toggle = async () => {
-    if (!isSupported) return;
     const token = localStorage.getItem('token');
 
     if (isSubscribed) {
@@ -437,13 +436,19 @@ function NotificationButton() {
     setIsSubscribed(true);
   };
 
-  if (!isSupported) return null;
+  const unsupportedTitle = 'Install the app to Home Screen to enable notifications';
 
   return (
     <button
-      onClick={toggle}
-      className={`p-2.5 rounded-xl glass-button transition-all ${isSubscribed ? 'text-primary' : 'text-text-secondary hover:text-text'}`}
-      title={isSubscribed ? 'Notifications enabled (click to disable)' : 'Enable notifications'}
+      onClick={isSupported ? toggle : undefined}
+      className={`p-2.5 rounded-xl glass-button transition-all ${
+        !isSupported
+          ? 'opacity-40 cursor-default text-text-muted'
+          : isSubscribed
+          ? 'text-primary'
+          : 'text-text-secondary hover:text-text'
+      }`}
+      title={!isSupported ? unsupportedTitle : isSubscribed ? 'Notifications enabled (click to disable)' : 'Enable notifications'}
     >
       {isSubscribed ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
     </button>
