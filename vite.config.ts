@@ -16,7 +16,7 @@ export default defineConfig({
         short_name: 'Dashboard',
         description: 'Smart home device controls and sensors',
         theme_color: '#FF6700',
-        background_color: '#0F172A',
+        background_color: '#0D1B4B',
         display: 'standalone',
         start_url: '/',
         icons: [

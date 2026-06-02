@@ -156,22 +156,22 @@ export function useTheme() {
     
     const root = document.documentElement;
     
-    // Background colors
-    root.style.setProperty('--bg-color', mix([255, 255, 255, 1], [15, 23, 42, 1]));
-    root.style.setProperty('--surface-color', mix([248, 250, 252, 0.8], [30, 41, 59, 0.7]));
-    root.style.setProperty('--surface-hover-color', mix([255, 255, 255, 0.9], [30, 41, 59, 0.85]));
-    
+    // Background colors — dark endpoint is Chicago twilight blue (#0D1B4B)
+    root.style.setProperty('--bg-color', mix([255, 255, 255, 1], [13, 27, 75, 1]));
+    root.style.setProperty('--surface-color', mix([248, 250, 252, 0.8], [24, 40, 100, 0.7]));
+    root.style.setProperty('--surface-hover-color', mix([255, 255, 255, 0.9], [24, 40, 100, 0.85]));
+
     // Text colors
     root.style.setProperty('--text-color', mix([30, 41, 59, 1], [248, 250, 252, 1]));
     root.style.setProperty('--text-secondary-color', mix([71, 85, 105, 1], [203, 213, 225, 1]));
     root.style.setProperty('--text-muted-color', mix([100, 116, 139, 1], [186, 198, 212, 1]));
-    
+
     // Border colors
     root.style.setProperty('--border-color', mix([0, 0, 0, 0.1], [255, 255, 255, 0.1]));
     root.style.setProperty('--border-hover-color', mix([0, 0, 0, 0.15], [255, 255, 255, 0.2]));
-    
+
     // Wallpaper overlay
-    root.style.setProperty('--wallpaper-overlay', mix([255, 255, 255, 0.85], [15, 23, 42, 0.85]));
+    root.style.setProperty('--wallpaper-overlay', mix([255, 255, 255, 0.85], [13, 27, 75, 0.85]));
     
     // Primary color shift
     root.style.setProperty('--primary-color', mix([255, 103, 0, 1], [255, 133, 51, 1]));
