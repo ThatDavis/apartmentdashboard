@@ -15,6 +15,7 @@ import {
   Activity,
   Sun,
   Moon,
+  RefreshCw,
   TrendingUp,
   ChevronDown,
   ChevronUp,
@@ -309,24 +310,17 @@ export default function Dashboard({ onLogout, isAdmin, onShowAdmin }: DashboardP
 }
 
 function ThemeToggle() {
-  const { mode, isLight, toggleMode, isManual } = useTheme();
+  const { mode, toggleMode } = useTheme();
 
   return (
     <button
       onClick={toggleMode}
-      className={`p-2.5 rounded-xl glass-button transition-all ${
-        isManual ? 'ring-2 ring-primary/30' : ''
-      }`}
+      className="p-2.5 rounded-xl glass-button transition-all"
       title={`Theme: ${mode} (click to cycle)`}
     >
-      {isLight ? (
-        <Sun className="w-5 h-5 text-warning" />
-      ) : (
-        <Moon className="w-5 h-5 text-secondary-light" />
-      )}
-      {isManual && (
-        <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
-      )}
+      {mode === 'light' && <Sun className="w-5 h-5 text-warning" />}
+      {mode === 'dark' && <Moon className="w-5 h-5 text-secondary-light" />}
+      {mode === 'auto' && <RefreshCw className="w-5 h-5 text-text-secondary" />}
     </button>
   );
 }
