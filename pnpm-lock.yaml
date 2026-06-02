@@ -340,6 +340,9 @@ importers:
       vitest:
         specifier: ^3.2.0
         version: 3.2.4(@types/node@22.19.19)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.22.3)
+      workbox-core:
+        specifier: ^7.4.1
+        version: 7.4.1
       workbox-precaching:
         specifier: ^7.4.1
         version: 7.4.1
