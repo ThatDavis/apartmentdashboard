@@ -370,8 +370,8 @@ function SwitchCard({ device, onToggle, onSchedule }: { device: Device; onToggle
         <div className="mt-auto cursor-pointer" onClick={device.isOnline ? onToggle : undefined}>
           <h3 className="font-medium text-text text-sm truncate">{device.name}</h3>
           <p className={`text-xs mt-1 font-medium ${
-            device.isOnline 
-              ? (isOn ? 'text-primary-light' : 'text-text-muted') 
+            device.isOnline
+              ? (isOn ? 'text-primary-light' : 'text-text-secondary')
               : 'text-text-muted'
           }`}>
             {device.isOnline ? (isOn ? 'On' : 'Off') : 'Offline'}

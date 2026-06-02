@@ -164,7 +164,7 @@ export function useTheme() {
     // Text colors
     root.style.setProperty('--text-color', mix([30, 41, 59, 1], [248, 250, 252, 1]));
     root.style.setProperty('--text-secondary-color', mix([71, 85, 105, 1], [203, 213, 225, 1]));
-    root.style.setProperty('--text-muted-color', mix([100, 116, 139, 1], [148, 163, 184, 1]));
+    root.style.setProperty('--text-muted-color', mix([100, 116, 139, 1], [186, 198, 212, 1]));
     
     // Border colors
     root.style.setProperty('--border-color', mix([0, 0, 0, 0.1], [255, 255, 255, 0.1]));
