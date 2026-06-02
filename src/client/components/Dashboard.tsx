@@ -383,72 +383,90 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 function NotificationButton() {
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const isSupported =
+  const [vapidKey, setVapidKey] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const browserSupported =
     typeof Notification !== 'undefined' &&
     'serviceWorker' in navigator &&
     'PushManager' in window;
 
   useEffect(() => {
-    if (!isSupported) return;
+    if (!browserSupported) return;
+    const token = localStorage.getItem('token');
+    // Find out whether the server actually has push configured.
+    fetch('/api/push/vapid-public-key', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(({ publicKey }) => setVapidKey(publicKey ?? null))
+      .catch(() => setVapidKey(null));
     navigator.serviceWorker.ready.then(reg =>
       reg.pushManager.getSubscription().then(sub => setIsSubscribed(!!sub))
     );
-  }, [isSupported]);
+  }, [browserSupported]);
+
+  // Only usable once the browser supports it AND the server has VAPID keys.
+  const isAvailable = browserSupported && !!vapidKey;
 
   const toggle = async () => {
-    const token = localStorage.getItem('token');
+    if (!isAvailable || busy) return;
+    setBusy(true);
+    try {
+      const token = localStorage.getItem('token');
 
-    if (isSubscribed) {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      if (sub) {
-        await sub.unsubscribe();
-        await fetch('/api/push/unsubscribe', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ endpoint: sub.endpoint }),
-        });
+      if (isSubscribed) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          await sub.unsubscribe();
+          await fetch('/api/push/unsubscribe', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ endpoint: sub.endpoint }),
+          });
+        }
+        setIsSubscribed(false);
+        return;
       }
-      setIsSubscribed(false);
-      return;
+
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') return;
+
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey!),
+      });
+
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(sub.toJSON()),
+      });
+      setIsSubscribed(true);
+    } finally {
+      setBusy(false);
     }
-
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return;
-
-    const res = await fetch('/api/push/vapid-public-key', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const { publicKey } = await res.json();
-    if (!publicKey) return;
-
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
-    });
-
-    await fetch('/api/push/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(sub.toJSON()),
-    });
-    setIsSubscribed(true);
   };
 
-  const unsupportedTitle = 'Install the app to Home Screen to enable notifications';
+  const title = !browserSupported
+    ? 'Install the app to Home Screen to enable notifications'
+    : !vapidKey
+    ? 'Notifications are not configured on the server'
+    : isSubscribed
+    ? 'Notifications enabled (click to disable)'
+    : 'Enable notifications';
 
   return (
     <button
-      onClick={isSupported ? toggle : undefined}
+      onClick={toggle}
+      disabled={!isAvailable || busy}
       className={`p-2.5 rounded-xl glass-button transition-all ${
-        !isSupported
+        !isAvailable
           ? 'opacity-40 cursor-default text-text-muted'
           : isSubscribed
           ? 'text-primary'
           : 'text-text-secondary hover:text-text'
       }`}
-      title={!isSupported ? unsupportedTitle : isSubscribed ? 'Notifications enabled (click to disable)' : 'Enable notifications'}
+      title={title}
     >
       {isSubscribed ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
     </button>
