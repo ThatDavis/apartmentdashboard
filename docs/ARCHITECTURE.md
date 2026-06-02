@@ -1,6 +1,6 @@
 # Architecture — Apartment Dashboard
 
-> Last updated: Sun May 31 2026
+> Last updated: Tue Jun 02 2026
 
 ## Stack Decisions
 
@@ -22,20 +22,28 @@
 apartment-dashboard/
 ├── src/
 │   ├── client/          # React frontend
-│   │   ├── components/  # React components (Login, Dashboard, DeviceCard)
+│   │   ├── components/  # React components (Login, Dashboard, DeviceCard, ScheduleEditor, AdminDashboard)
+│   │   ├── hooks/       # React hooks (useTheme, useDevices, useAuth)
 │   │   ├── App.tsx      # Main app with auth state management
 │   │   ├── main.tsx     # Entry point
-│   │   └── index.html   # HTML template with mobile meta tags
+│   │   ├── index.html   # HTML template with mobile meta tags
+│   │   └── index.css    # Global styles with glass morphism & twilight theme
 │   ├── server/          # Fastify backend
-│   │   ├── routes/      # API routes (auth, health, devices)
+│   │   ├── routes/      # API routes (auth, devices, admin, schedules, twilight)
+│   │   ├── services/    # Business logic (scheduleExecutor, homeAssistant)
 │   │   ├── db/          # Drizzle schema and database connection
 │   │   └── index.ts     # Server bootstrap
 │   └── shared/          # Shared types and utilities
 ├── tests/               # Vitest tests
 ├── docs/                # Documentation
+│   ├── SPEC.md          # Feature specifications
+│   ├── ARCHITECTURE.md  # Architecture decisions
+│   └── adr/             # Architecture Decision Records
+├── .agent/              # Agent continuity files
 ├── .github/workflows/   # GitHub Actions CI/CD
 ├── docker-compose.yml   # Production deployment
-└── Dockerfile           # Multi-stage build
+├── Dockerfile           # Multi-stage build
+└── PLAN.md              # Project roadmap
 ```
 
 ### Architectural Notes
@@ -46,7 +54,27 @@ apartment-dashboard/
 
 ## Key Design Decisions
 
-*No architecture decisions recorded yet. Run `/dev:file-adr` when making significant design choices.*
+### Theme System
+The app features a twilight-aware theme that transitions between light and dark modes based on civil twilight times for Chicago, IL. The theme system:
+- Calculates dawn/dusk progression in JavaScript (see `useTheme.ts`)
+- Sets interpolated CSS custom properties (`--bg-color`, `--text-color`, etc.) on `:root`
+- Uses static semi-transparent glass effects that work across both light and dark backgrounds
+- Supports manual override (Auto/Light/Dark) with a sun/moon toggle
+- Avoids CSS `color-mix()` and `@property` for broader browser compatibility
+
+### Glass Morphism UI
+All UI elements use a glass morphism design with:
+- Semi-transparent backgrounds (`rgba(255,255,255,0.08-0.2)`)
+- Heavy backdrop blur (`blur(20px) saturate(180%)`)
+- Inset box shadows for beveled edges
+- Works over both light and dark wallpaper backgrounds
+
+### Switch Scheduling
+- Visual 24-hour slider with draggable handles
+- Civil twilight zones shown as gradient backgrounds
+- 15-minute snap intervals
+- Background scheduler runs every 60 seconds with DST-aware Chicago timezone
+- Stores schedules in SQLite with Drizzle ORM
 
 ## Architecture Decision Records
 

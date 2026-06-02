@@ -28,16 +28,33 @@
 
 ---
 
-## Future Milestones
+## Milestone 2: Switch Scheduling & Twilight Theme
 
-### Milestone 2: Data History
-- [ ] Show trends/graphs for soil sensor readings over time
-- [ ] Historical data storage and aggregation
+**Goal:** Visual switch scheduling with 24-hour timeline and automatic twilight-aware theme
+**Status:** Complete
 
-### Milestone 3: Sharing & Access
+### Features
+- [x] Visual 24-hour switch scheduler with draggable handles
+- [x] Civil twilight display on schedule timeline
+- [x] 15-minute snap intervals
+- [x] Background scheduler with DST-aware Chicago timezone
+- [x] Twilight-aware automatic theme (light/dark based on dawn/dusk)
+- [x] Manual theme override (Auto/Light/Dark)
+- [x] Glass morphism UI with translucent elements
+
+---
+
+## Milestone 3: Admin & Data History
+
+**Goal:** Admin user management and historical data visualization
+**Status:** Partially Complete
+
+### Features
 - [x] Admin role for device management
 - [x] Domain whitelist for device security
-- [ ] Admin user management: delete users and change PINs (Issue #15)
+- [x] Admin user management: list/delete users, change PINs
+- [x] Create new users from admin panel
+- [ ] 48-hour sensor history charts with SVG visualization
 - [ ] Multiple PINs per user
 - [ ] Access logs
 - [ ] Device grouping by room/area
@@ -51,7 +68,7 @@
 
 ## Active Feature
 
-- [ ] Visual switch scheduling with twilight timeline (Issue #17, branch feature/17-switch-scheduling-twilight) — In Progress
+*None — all active features complete*
 
 ## Completed Features
 
@@ -59,3 +76,7 @@
 - [x] PIN + username authentication (Sun May 31 2026) — PR #12
 - [x] Mobile dashboard with real-time data (Sun May 31 2026) — PR #13
 - [x] Admin role with device management and domain whitelist (Sun May 31 2026)
+- [x] Switch scheduling with 24-hour draggable slider and twilight display (Tue Jun 02 2026)
+- [x] Twilight-aware theme system with manual override (Tue Jun 02 2026)
+- [x] Glass morphism UI design (Tue Jun 02 2026)
+- [x] Admin user management (list, delete, change PINs, create users) (Tue Jun 02 2026)
