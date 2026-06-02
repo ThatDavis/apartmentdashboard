@@ -50,7 +50,7 @@ app.addHook('preHandler', async (request: AuthenticatedRequest, reply) => {
   
   // Skip auth for public API routes and static files
   const publicRoutes = ['/api/login', '/api/logout', '/api/health'];
-  const isStaticFile = path === '/' || path.startsWith('/assets/') || path.endsWith('.html') || path.endsWith('.js') || path.endsWith('.css');
+  const isStaticFile = !path.startsWith('/api/');
   if (publicRoutes.includes(path) || isStaticFile) {
     return;
   }
