@@ -19,17 +19,27 @@ Goal: Connect to Home Assistant, display sensor data and switch controls with PI
 - [x] Account lockout after failed PIN attempts — Completed
 - [x] Health endpoint for HA connectivity — Completed
 
+### Milestone 2: Switch Scheduling & Twilight Theme (Complete)
+- [x] Visual 24-hour switch scheduler with draggable handles
+- [x] Civil twilight display on schedule timeline
+- [x] 15-minute snap intervals
+- [x] Background scheduler with DST-aware Chicago timezone
+- [x] Twilight-aware automatic theme (light/dark based on dawn/dusk)
+- [x] Manual theme override (Auto/Light/Dark)
+- [x] Glass morphism UI with translucent elements
+
 ### Milestone 3: Sharing & Access (In Progress)
 - [x] Admin role for device management
 - [x] Domain whitelist for device security
 - [x] Admin user management: delete users and change PINs (Issue #15, PR #16) — Completed
+- [x] Create new users from admin panel
+- [ ] 48-hour sensor history charts
 - [ ] Multiple PINs per user
 - [ ] Access logs
 - [ ] Device grouping by room/area
 
 ### Future Milestones
-- Milestone 2: Data history and trends
-- Milestone 3: Enhanced sharing and access controls
+- Milestone 4: Enhanced data history and analytics
 
 ### Open Questions
 - [ ] Support multiple HA instances?
@@ -40,6 +50,7 @@ Goal: Connect to Home Assistant, display sensor data and switch controls with PI
 - Sun May 31 2026: Initial stack — TypeScript + Fastify + React + SQLite. Rationale: Fastify is fast and modern for APIs, React handles real-time UI well, SQLite requires zero setup for small deployments.
 - Sun May 31 2026: Deep-plan validated Milestone 1. Key decisions: HA connectivity via health endpoint, rate limiting for PIN brute force, mobile-first responsive design.
 - Sun May 31 2026: Deep-plan validated admin device security. Key decisions: Whitelist-only device model (no isShared flag), hardcoded domain whitelist with env override, admin role for device management, remove sync-ha-devices script as security risk.
+- Tue Jun 02 2026: Theme system approach — Calculate interpolated color values in JavaScript and set CSS custom properties, rather than using CSS `color-mix()` with `@property`. Rationale: `color-mix()` with dynamic `calc()` expressions has inconsistent browser support; JS interpolation is more reliable and easier to debug.
 
 ## [PROGRESS]
 
@@ -68,14 +79,15 @@ Goal: Connect to Home Assistant, display sensor data and switch controls with PI
 | Sun May 31 2026 | Completed feature: Admin device security with domain whitelist. All tests passing (33/33). |
 | Sun May 31 2026 | Completed feature: Admin user management: delete users and change PINs (Issue #15, PR #16). All 41 tests passing. |
 | Sun May 31 2026 | Started feature: Visual switch scheduling with twilight timeline (Issue #17) on branch feature/17-switch-scheduling-twilight. |
-|  |    — Add schedules table to database schema |
-|  |    — Create twilight service (fetch sunrise-sunset.org API at midnight CT) |
-|  |    — Add schedule CRUD API endpoints |
-|  |    — Build background scheduler (60s interval, DST-aware, Chicago timezone) |
-|  |    — Create 24h range slider component with twilight visualization |
-|  |    — Integrate schedule editor into Dashboard switch cards |
-|  |    — Handle server restart: turn off all scheduled switches |
-|  |    — Write tests for schedule execution and DST handling |
+| Tue Jun 02 2026 | Completed feature: Switch scheduling with twilight timeline. All 56 tests passing. |
+|  |    ✓ Add schedules table to database schema |
+|  |    ✓ Create twilight service (fetch sunrise-sunset.org API) |
+|  |    ✓ Add schedule CRUD API endpoints |
+|  |    ✓ Build background scheduler (60s interval, DST-aware, Chicago timezone) |
+|  |    ✓ Create 24h range slider component with twilight visualization |
+|  |    ✓ Integrate schedule editor into Dashboard switch cards |
+|  |    ✓ Handle server restart: turn off all scheduled switches |
+|  |    ✓ Write tests for schedule execution and DST handling |
 |  |    ✓ Add API endpoints: list users, delete user, update PIN |
 |  |    ✓ Prevent self-deletion in API |
 |  |    ✓ Add Users tab to AdminDashboard |
@@ -90,6 +102,7 @@ Goal: Connect to Home Assistant, display sensor data and switch controls with PI
 |  |    ✓ Remove sync-ha-devices.mjs security risk |
 |  |    ✓ Update seed script with --admin flag |
 |  |    ✓ Write 11 admin route tests |
+| Tue Jun 02 2026 | Fixed theme system: replaced CSS color-mix() with JS-calculated CSS custom properties for broader browser compatibility. Background now transitions smoothly between light/dark. |
 
 ## [DISCOVERIES]
 
@@ -133,5 +146,16 @@ Goal: Connect to Home Assistant, display sensor data and switch controls with PI
 - Added 8 new tests for user management API endpoints
 - All 41 tests passing, build clean
 
+### Switch Scheduling & Twilight Theme (Tue Jun 02 2026)
+- Built visual 24-hour switch scheduler with draggable handles and 15-minute snap
+- Integrated civil twilight visualization from sunrise-sunset.org API
+- Created background scheduler service (60s interval, DST-aware, Chicago timezone)
+- Implemented twilight-aware theme system with manual override (Auto/Light/Dark)
+- Designed glass morphism UI with semi-transparent elements and backdrop blur
+- All 56 tests passing, build clean
+
 ### Milestone 1 Complete
 All 10 features implemented and merged. Project is functional end-to-end.
+
+### Milestone 2 Complete
+Switch scheduling with twilight timeline and automatic theme system fully implemented.
