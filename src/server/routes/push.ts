@@ -5,17 +5,24 @@ import { pushSubscriptions } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 
+let pushConfigured = false;
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
-  webpush.setVapidDetails(
-    `mailto:${process.env.VAPID_EMAIL || 'admin@localhost'}`,
-    process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-  );
+  try {
+    webpush.setVapidDetails(
+      `mailto:${process.env.VAPID_EMAIL || 'admin@example.com'}`,
+      process.env.VAPID_PUBLIC_KEY,
+      process.env.VAPID_PRIVATE_KEY
+    );
+    pushConfigured = true;
+  } catch (err) {
+    // Bad keys should disable push, never crash the server (login included).
+    console.error('[push] Invalid VAPID configuration, notifications disabled:', err);
+  }
 }
 
 export async function pushRoutes(fastify: FastifyInstance) {
   fastify.get('/push/vapid-public-key', async () => {
-    return { publicKey: process.env.VAPID_PUBLIC_KEY || null };
+    return { publicKey: pushConfigured ? process.env.VAPID_PUBLIC_KEY! : null };
   });
 
   fastify.post('/push/subscribe', async (request: AuthenticatedRequest, reply) => {
@@ -43,7 +50,7 @@ export async function pushRoutes(fastify: FastifyInstance) {
 }
 
 export async function sendPushToAll(title: string, body: string) {
-  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) return;
+  if (!pushConfigured) return;
 
   const subs = await db.select().from(pushSubscriptions).all();
   const payload = JSON.stringify({ title, body });
