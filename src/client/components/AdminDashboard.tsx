@@ -11,8 +11,12 @@ import {
   Activity,
   Users,
   Settings,
-  KeyRound
+  KeyRound,
+  Sun,
+  Moon,
+  Palette
 } from 'lucide-react';
+import { setThemeMode, getThemeMode } from '../hooks/useTheme.js';
 
 interface AdminDevice {
   id: number;
@@ -342,7 +346,21 @@ export default function AdminDashboard({ onLogout, onBack }: { onLogout: () => v
               <ArrowLeft className="w-4 h-4" />
               Back to Dashboard
             </button>
-            <h1 className="text-3xl font-bold text-text">Admin Panel</h1>
+            <div className="flex items-center justify-between">
+              <h1 className="text-3xl font-bold text-text">Admin Panel</h1>
+              <button
+                onClick={() => {
+                  const current = getThemeMode();
+                  const next = current === 'auto' ? 'light' : current === 'light' ? 'dark' : 'auto';
+                  setThemeMode(next);
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl glass-button text-sm text-text-secondary hover:text-text transition-all"
+                title="Preview theme"
+              >
+                <Palette className="w-4 h-4" />
+                Preview Theme
+              </button>
+            </div>
           </div>
         </header>
 

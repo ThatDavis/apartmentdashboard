@@ -51,14 +51,47 @@ function calculateProgress(twilight: TwilightData | null): number {
   return 1;
 }
 
+// Global theme state for cross-component access
+let globalMode: ThemeMode = (localStorage.getItem('theme-mode') as ThemeMode) || 'auto';
+const listeners = new Set<() => void>();
+
+function notifyListeners() {
+  listeners.forEach(listener => listener());
+}
+
+export function setThemeMode(mode: ThemeMode) {
+  globalMode = mode;
+  localStorage.setItem('theme-mode', mode);
+  notifyListeners();
+  window.dispatchEvent(new CustomEvent('themechange', { detail: mode }));
+}
+
+export function getThemeMode(): ThemeMode {
+  return globalMode;
+}
+
 export function useTheme() {
-  const [mode, setMode] = useState<ThemeMode>(() => {
-    const saved = localStorage.getItem('theme-mode');
-    return (saved as ThemeMode) || 'auto';
-  });
+  const [mode, setMode] = useState<ThemeMode>(globalMode);
   const [progress, setProgress] = useState(1);
   const [twilight, setTwilight] = useState<TwilightData | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync with global state
+  useEffect(() => {
+    const handleChange = () => setMode(globalMode);
+    listeners.add(handleChange);
+    
+    const handleEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<ThemeMode>;
+      setMode(customEvent.detail);
+    };
+    window.addEventListener('themechange', handleEvent);
+    
+    return () => {
+      listeners.delete(handleChange);
+      window.removeEventListener('themechange', handleEvent);
+    };
+  }, []);
 
   const fetchTwilight = useCallback(async () => {
     try {
@@ -117,15 +150,12 @@ export function useTheme() {
   }, [progress]);
 
   const toggleMode = useCallback(() => {
-    setMode(prev => {
-      const next = prev === 'auto' ? 'light' : prev === 'light' ? 'dark' : 'auto';
-      localStorage.setItem('theme-mode', next);
-      return next;
-    });
-  }, []);
+    const next = mode === 'auto' ? 'light' : mode === 'light' ? 'dark' : 'auto';
+    setThemeMode(next);
+  }, [mode]);
 
   const isManual = mode !== 'auto';
   const isLight = progress > 0.5;
 
-  return { mode, progress, toggleMode, isManual, isLight };
+  return { mode, progress, toggleMode, setMode: setThemeMode, isManual, isLight };
 }
